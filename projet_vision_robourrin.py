@@ -243,19 +243,6 @@ def SetBaseMotorsVelocities( siID, iLeft, dbVelLeft, iRight, dbVelRight):
     print('Go() : ERREUR ---> appel a simxSetJointTargetVelocity() depuis SetBaseMotorsVelocities() 2')
     print('code d erreur V-REP = ' + str(siError))
     return(-1)
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# positionnement de la camera a une orientation donnee
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def SetCamOrientation( siID, hCamMotor, dbOrientation):
-    #....................................*/
-    # Application des vitesses au moteur */
-    #....................................*/
-    siError = sim.simxSetJointTargetPosition(siID, hCamMotor, (dbOrientation / 180.0)*math.pi, sim.simx_opmode_blocking)
-    if ((siError != sim.simx_return_ok) and (siError != sim.simx_return_novalue_flag)):
-        print('Go() : ERREUR ---> appel a simxSetJointTargetVelocity() depuis RotateCameraContinuous()')    
-        print('code d erreur V-REP = ' + str(siError))
-        return(-1)
-    return 0
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # exemple de fonction permettant de realiser l'acquisition d'une
 # image de maniere cyclique
@@ -682,29 +669,29 @@ def MoveToolTo( iRef, tPos,tOri):
 #  aPos       : position reellement atteinte
 #  aOri       : orientaion rellement atteinte
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def PTP( tPos, dbVel, dbTimeStep):
+#def PTP( tPos, dbVel, dbTimeStep):
     # obtention de la position et l'orientation courante
     # de l'outil
-    while True:
-        cPos, cOri = GetMobileBasePosition(-1)
-        if (len(cPos) > 0) and (len(cOri) > 0):
-            break
-    # calcul des variations 
-    DPos = np.array(tPos) - np.array(cPos)
-    # calcul du nombre de pas a realiser a priori
-    npDist = np.linalg.norm(DPos)
-    dbT = npDist / dbVel
+#    while True:
+#        cPos, cOri = GetMobileBasePosition(-1)
+#        if (len(cPos) > 0) and (len(cOri) > 0):
+#            break
+#    # calcul des variations 
+#    DPos = np.array(tPos) - np.array(cPos)
+#    # calcul du nombre de pas a realiser a priori
+#    npDist = np.linalg.norm(DPos)
+#    dbT = npDist / dbVel
     # nombre d'iterations
-    iNbIter = int(dbT / dbTimeStep)
-    dPos = DPos / iNbIter
+#    iNbIter = int(dbT / dbTimeStep)
+#    dPos = DPos / iNbIter
     # initialisation
-    Pos = cPos
+#    Pos = cPos
     # deplacement
-    for i in range(iNbIter):
-        Pos += dPos
-        MoveToolTo( -1, Pos.tolist(), cOri)
-        time.sleep( dbTimeStep * 0.25)
-    return Pos.tolist(), cOri
+#    for i in range(iNbIter):
+#        Pos += dPos
+#        MoveToolTo( -1, Pos.tolist(), cOri)
+#        time.sleep( dbTimeStep * 0.25)
+#    return Pos.tolist(), cOri
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # fonction de capture d'un objet "en contact"
 # avec le capteur d'effort
