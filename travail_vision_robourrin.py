@@ -641,7 +641,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
     while dbDist > dbMinDist:
         # scan de la cible : 
         iResult, dbAz = RechercheCylindre(dbAngleStep, bGoR)
-        print("trouver car")
+        print("trouver cylindre")
         # on s'oriente vers la cible si on l'a trouvee :
         if iResult > 0:
             Turn2((dbAz/180.0)*math.pi, 0.5, 0.05, 0.1, 0.1)
