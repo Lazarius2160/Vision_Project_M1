@@ -26,7 +26,8 @@ RIGHT_MOTOR = "moteur_droit"                      # nom du moteur droit dans la 
 CAM_MOTOR = "moteur_tourelle"                     # nom du moteur de la tourelle dans la scene
 CAMERA = "camera"                                 # nom du "vision sensor" associe a la tourelle dans la scene
 COLLISION = "Robourrin"                           # nom de l'objet "collision" dans la scene
-CYLINDRE = "cylindre"
+CYLINDRE = "cylindre"                             # cylindre vert 
+CYLINDRE0="cylindre0"                             # cylindre rouge
 CAPTEUR = "distance_sensor"                       # capteur de distance
 TARGET = "target"                                 # target dummy
 NB_ACQUI  = 20
@@ -150,35 +151,6 @@ def GetDistanceMeasurement():
         print('distance = ' + str(dbDist))
         return True, dbDist, iObject
     return False, -1.0, -1
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# obtention de la position (generalisee) de la base 
-# mobile du robot   
-# OUT :
-#   [x,y,z] : position (globale) du repere de la base
-#             mobile
-#   [a,b,c] : orientation (globale) du repere de base
-#             mobile (X est dans la direction d'avance
-#             du robot).                                
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# def GetMobileBasePosition(iRef):  
-#   #............................
-#   # recuperation de la position
-#   #............................
-#   siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
-#   if (siError != sim.simx_return_ok ):
-#     print('GetMobileBasePosition(iRef) : ERREUR ---> appel a simxGetObjectPosition().\n')
-#     print('code d erreur V-REP = ', str(siError) )
-#     return [],[]
-#   #.............................
-#   # recuperation de l'orientation
-#   #..............................
-#   siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
-#   if (siError != sim.simx_return_ok ):
-#     print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
-#     print('code d erreur V-REP = ', str(siError) )
-#     return Pos,[]
-#   # OK
-#   return Pos, Ori
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # obtention de la position (generalisee) de la base 
 # mobile du robot 
@@ -485,7 +457,7 @@ def Azimut( dbX, dbY, dbF, dbW):
 # determination de l'azimut du cylindre vu de la camera, 
 # s'il y a lieu (s'il est visible)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def AzimutCameraCylindre( dbAngle, bGoR=True):
+def AzimutCameraCylindre( dbAngle, bGoR):
     # declenchement d'un acquisition
     img1 = GrabImageFromCam(gsiID, giCam)
     cv2.imshow("ORIGINAL", img1)
@@ -521,34 +493,6 @@ def AzimutCameraCylindre( dbAngle, bGoR=True):
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoG( imgIn, dbSeuil, iPlan):
-    # recuperation des dimensions de l'image
-    iImgSize = imgIn.shape
-    iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
-    iNc = iImgSize[1]       # nombre de colonnes (largeur de l'image)
-    iNp = iImgSize[2]       # nombre de plan couleur
-    # intialisation
-    dbXcog = 0.0
-    dbYcog = 0.0
-    iNbPixels = 0
-    # calcul
-    for i in range(iNl):
-        for j in range(iNc):
-            dbIntensite = imgIn[i,j,iPlan]
-            if dbIntensite > dbSeuil:
-                dbXcog += j
-                dbYcog += i
-                iNbPixels += 1
-    # coordonnees finales
-    if iNbPixels > 0:
-        dbXcog = dbXcog / iNbPixels
-        dbYcog = dbYcog / iNbPixels
-    else:
-        dbXcog = -1
-        dbYcog = -1
-    # fini
-    print('xc = ' + str( dbXcog))
-    return iNbPixels, [dbXcog, dbYcog]
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # calcul du centre de gravite associe a un plan image
 # IN : 
@@ -653,9 +597,9 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
             # calcul de la distance au cylindre 
             rPos, rOri = GetMobileBaseRelativePosition( giCylindre)
             # petit "piege" a eviter : ne pas prendre en compte z...
-            #rPos[2] = 0.0
-            #v1 = np.array(rPos)
-            #dbDistTarget = np.linalg.norm(v1)
+            rPos[2] = 0.0
+            v1 = np.array(rPos)
+            dbDistTarget = np.linalg.norm(v1)
             # JBO : manquait le iDetectedObject (car GetDistanceMeasurement() retoure 3 objets)
             iError, dbDistTarget, iDetectedObject = GetDistanceMeasurement()
             if iError == False:
@@ -876,7 +820,16 @@ argc = len(sys.argv)
 if( argc == 1 ):
   usage(sys.argv[0])
   exit()
-giCam = iCam
+#...............................................
+# recuperation du handle sur l'objet "collision"
+#...............................................
+siErrorCode, giCylindre = sim.simxGetObjectHandle(siID, CYLINDRE, sim.simx_opmode_blocking)
+if( siErrorCode != sim.simx_error_noerror ):
+    print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
+    print('         code de retour V-REP = ' + str(siErrorCode))
+    sim.simxFinish(siID)
+    exit()
+print("lien a la collision OK (ID = " + str(giCylindre) + ")")
 #...........................................
 #recuperation des "handles" sur le target dummy
 #...........................................
@@ -968,10 +921,11 @@ if bSTARTUP_TEST:
 # - on pose avec Realease()
 
 # on arrete le robot
-SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
+SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
 # recherche et rencontre du cylindre vert
 BourineCylindre2(15.0, 1.0, 0.5, True) 
-Pos, Ori = GetMobileBasePosition(-1)
+SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
+#Pos, Ori = GetMobileBasePosition(-1)
 # met le kuka face au cube
 #Turn2(2*(90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
 # prend la distance du kuka au cube
@@ -995,22 +949,9 @@ Pos, Ori = GetMobileBasePosition(-1)
 # position_cube[1]=[position_cube[1][0],position_cube[1][1],position_cube[1][2]+0.1]
 # MoveToolTo(-1, position_cube[1],Ori)
 
-
-# # on arrete le robot 
-# SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-# # recherche et rencontre du cylindre
-# if iVERSION < 3 :
-#     # recherche et recontre du cylindre vert : 
-#     BourineCylindre(15.0, 1.0, 1.0, True)
-#     # puis recherche et rencontre du cylindre rouge : 
-#     BourineCylindre(15.0, 1.0, 1.0, False)
-# else:
-#     # recherche et rencontre du cylindre vert : 
-#     BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
-#     # puis recherche et rencontre du cylindre rouge :
-#     BourineCylindre2(15.0, 1.0, 1.0, False)
 #..............................
 # deconnexion du serveur V-REP 
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
