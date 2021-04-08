@@ -1055,7 +1055,6 @@ if bSTARTUP_TEST:
 # recherche et rencontre du cylindre vert : 
 BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-print("cest oooook")
 # puis recherche et rencontre du cylindre rouge :
 #BourineCylindre2(15.0, 1.0, 1.0, False)
 #SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
