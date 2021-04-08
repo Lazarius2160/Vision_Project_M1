@@ -1,10 +1,10 @@
-
+#===============================================
+# exemple de script permettant de controler
+# le robot ROBOURRIN
 #-----------------------------------------------
 # Jacques BOONAERT - mars 2021
 # UV Robotique & Vision
 #===============================================
-
-
 # "switches"
 bSTARTUP_TEST = False                            # indique si la sequence de test (vision et
                                                  # deplacement) doit etre effectuee
@@ -142,7 +142,7 @@ def GetDistanceMeasurement():
 #             mobile (X est dans la direction d'avance
 #             du robot).                                
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def GetMobileBasePosition(iRef):  
+def GetMobileBasePosition():  
   #............................
   # recuperation de la position
   #............................
@@ -436,7 +436,7 @@ def Go3( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition()
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
@@ -450,7 +450,7 @@ def Go3( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        PosCur, OriCur = GetMobileBasePosition(-1)
+        PosCur, OriCur = GetMobileBasePosition()
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -486,7 +486,7 @@ def Go4( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition()
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
@@ -511,7 +511,7 @@ def Go4( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        PosCur, OriCur = GetMobileBasePosition(-1)
+        PosCur, OriCur = GetMobileBasePosition()
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -547,7 +547,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition()
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
@@ -571,7 +571,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        PosCur, OriCur = GetMobileBasePosition(-1)
+        PosCur, OriCur = GetMobileBasePosition()
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -603,7 +603,7 @@ def Turn2( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
   dbAparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition()
       if len(Ori) > 0:
           break
   # on cree le dummy :
@@ -860,9 +860,9 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
             # calcul de la distance au cylindre 
             rPos, rOri = GetMobileBaseRelativePosition( giCylindre)
             # petit "piege" a eviter : ne pas prendre en compte z...
-            #rPos[2] = 0.0
-            #v1 = np.array(rPos)
-            #dbDistTarget = np.linalg.norm(v1)
+            rPos[2] = 0.0
+            v1 = np.array(rPos)
+            dbDistTarget = np.linalg.norm(v1)
             iError, dbDistTarget = GetDistanceMeasurement()
             if iError == False:
                 dbDistTarget = dbDEFAULT_DISTANCE
@@ -871,7 +871,6 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
             iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
             if iError == 1:
                 return 0
-                
         else:
             return -1 # la cible n'a pas ete trouvee ou a disparu
     return 0    # cible atteinte a la precision voulue...
@@ -1032,7 +1031,7 @@ if bSTARTUP_TEST:
     while True:
         cv2.imshow("RENDER", gimg)
         cv2.waitKey(20)
-        aPos, aOri = GetMobileBasePosition(-1)
+        aPos, aOri = GetMobileBasePosition()
         if len(aPos) > 0: # il peut arriver que la liste retournee soit vide ! 
             strX =  '{:.3f}'.format(aPos[0])
             strY =  '{:.3f}'.format(aPos[1])
@@ -1052,20 +1051,15 @@ if bSTARTUP_TEST:
     time.sleep(5)
 #_______________________________________________________________________________________________
 # on arrete le robot 
+# # recherche et rencontre du cylindre
+# recherche et rencontre du cylindre vert : 
+BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-# recherche et rencontre du cylindre
-if iVERSION < 3 :
-    # recherche et recontre du cylindre vert : 
-    BourineCylindre(15.0, 1.0, 1.0, True)
-    SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-    print("oooooookkkk")
-    # puis recherche et rencontre du cylindre rouge : 
-    #BourineCylindre(15.0, 1.0, 1.0, False)
-else:
-    # recherche et rencontre du cylindre vert : 
-    BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
-    # puis recherche et rencontre du cylindre rouge :
-    #BourineCylindre2(15.0, 1.0, 1.0, False)
+print("cest oooook")
+# puis recherche et rencontre du cylindre rouge :
+#BourineCylindre2(15.0, 1.0, 1.0, False)
+#SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
+
 #AzimutCameraCylindre(30.0)
 # on avance de 2 metres avec Go : 
 #Go2( 2, 0.5, 0.01, 0.1, 0.1)
