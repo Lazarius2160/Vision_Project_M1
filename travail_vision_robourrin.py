@@ -131,8 +131,8 @@ def GetDistanceMeasurement():
         dPoint = np.array(Point)
         dbDist = np.linalg.norm(dPoint)
         print('distance = ' + str(dbDist))
-        return True, dbDist
-    return False, -1.0
+        return True, dbDist, iObject
+    return False, -1.0, -1
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # obtention de la position (generalisee) de la base 
 # mobile du robot 
