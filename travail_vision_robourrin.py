@@ -166,35 +166,6 @@ def GetMobileBasePosition(iRef):
   # OK
   return Pos, Ori
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# obtention de la position (relative) de la base 
-# mobile du robot   
-# OUT :
-#   [x,y,z] : position (globale) du repere de la base
-#             mobile
-#   [a,b,c] : orientation (globale) du repere de base
-#             mobile (X est dans la direction d'avance
-#             du robot).                                
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def GetMobileBaseRelativePosition(iRef):  
-  #............................
-  # recuperation de la position
-  #............................
-  siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
-  if (siError != sim.simx_return_ok ):
-    print('GetMobileBasePosition() : ERREUR ---> appel a simxGetObjectPosition().\n')
-    print('code d erreur V-REP = ', str(siError) )
-    return [],[]
-  #.............................
-  # recuperation de l'orientation
-  #..............................
-  siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
-  if (siError != sim.simx_return_ok ):
-    print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
-    print('code d erreur V-REP = ', str(siError) )
-    return Pos,[]
-  # OK
-  return Pos, Ori
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # obtention de la position (generalisee) de la base 
 # mobile du robot 
 # IN : 
@@ -630,7 +601,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
             #iError, dbDistParcourue, dbDist = Go4(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
-            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
+            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.25, 0.05, 0.3, dbMinDist, 0.1) #diminue vitesse et aumente epsilon et gain
             if iError == 1:
                 return 0
         else:
@@ -937,7 +908,7 @@ if bSTARTUP_TEST:
 # on arrete le robot 
 # # recherche et rencontre du cylindre
 # recherche et rencontre du cylindre vert : 
-BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
+BourineCylindre2(15.0, 1.0, 0.3, True)     # on s'approche a 30 cm
 SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
 print("cest oooook")
 # puis recherche et rencontre du cylindre rouge :
@@ -970,6 +941,8 @@ print("cest oooook")
 #..............................
 sim.simxFinish(gsiID)
 print("deconnexion du serveur.")
+
+
 
 
 
