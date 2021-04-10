@@ -358,7 +358,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       # application des vitesses :
       Wroue = dbV /  RAYON_ROUE  
       SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
-      time.sleep( dbTimeStep)
+      time.sleep( dbTimeStep/2)     #>>>> diminue le time step pour s'approcher plus doucement
       # mise a jour de l'indice de l'iteration
     # en quittant, on fixe les vitesses a 0 : 
   SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
@@ -601,7 +601,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
             #iError, dbDistParcourue, dbDist = Go4(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
-            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.25, 0.05, 0.3, dbMinDist, 0.1) #diminue vitesse et aumente epsilon et gain
+            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.10, 0.05, 0.3, dbMinDist, 0.1) # >>>> diminue vitesse et aumente epsilon et gain pour se rapprocher au mieux
             if iError == 1:
                 return 0
         else:
@@ -941,6 +941,14 @@ print("cest oooook")
 #..............................
 sim.simxFinish(gsiID)
 print("deconnexion du serveur.")
+
+
+
+
+
+
+
+
 
 
 
