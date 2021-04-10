@@ -265,6 +265,35 @@ def CyclicGrabbing():
     threading.Timer(UPDATE_TIME, CyclicGrabbing).start()
   else:
     bOnGoing = False
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# obtention de la position (relative) de la base 
+# mobile du robot   
+# OUT :
+#   [x,y,z] : position (globale) du repere de la base
+#             mobile
+#   [a,b,c] : orientation (globale) du repere de base
+#             mobile (X est dans la direction d'avance
+#             du robot).                                
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def GetMobileBaseRelativePosition(iRef):  
+  #............................
+  # recuperation de la position
+  #............................
+  siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
+  if (siError != sim.simx_return_ok ):
+    print('GetMobileBasePosition() : ERREUR ---> appel a simxGetObjectPosition().\n')
+    print('code d erreur V-REP = ', str(siError) )
+    return [],[]
+  #.............................
+  # recuperation de l'orientation
+  #..............................
+  siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
+  if (siError != sim.simx_return_ok ):
+    print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
+    print('code d erreur V-REP = ', str(siError) )
+    return Pos,[]
+  # OK
+  return Pos, Ori
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # TODO (1):
 # ecrire une fonction permettant de faire avancer le robot 
@@ -358,7 +387,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       # application des vitesses :
       Wroue = dbV /  RAYON_ROUE  
       SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
-      time.sleep( dbTimeStep/2)     #>>>> diminue le time step pour s'approcher plus doucement
+      time.sleep( dbTimeStep/2)
       # mise a jour de l'indice de l'iteration
     # en quittant, on fixe les vitesses a 0 : 
   SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
@@ -601,7 +630,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
             #iError, dbDistParcourue, dbDist = Go4(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
-            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.10, 0.05, 0.3, dbMinDist, 0.1) # >>>> diminue vitesse et aumente epsilon et gain pour se rapprocher au mieux
+            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.25, 0.05, 0.3, dbMinDist, 0.1) # >>> diminue vitesse et aumente epsilon et gain pour gagner en précision
             if iError == 1:
                 return 0
         else:
@@ -941,18 +970,4 @@ print("cest oooook")
 #..............................
 sim.simxFinish(gsiID)
 print("deconnexion du serveur.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
