@@ -1,3 +1,5 @@
+#Ma version qui ne s'arrête pas devant le cylindre
+
 # "switches"
 bSTARTUP_TEST = False                            # indique si la sequence de test (vision et
                                                  # deplacement) doit etre effectuee
