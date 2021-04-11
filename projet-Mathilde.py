@@ -588,7 +588,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
             #iError, dbDistParcourue, dbDist = Go4(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
-            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.3, 0.05, 0.3, dbMinDist, 0.1)   #JBO : dtTimeStep passe de 0.2 a 0.1
+            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.3, 0.05, 0.30, dbMinDist, 0.1)   #JBO : dtTimeStep passe de 0.2 a 0.1
             if iError == 1: 
                 return 0
         else:
