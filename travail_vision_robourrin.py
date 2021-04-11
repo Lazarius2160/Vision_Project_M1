@@ -637,7 +637,7 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
             rPos[2] = 0.0     #!!!!!!!!!!!!!! elle a commenté
             v1 = np.array(rPos)
             dbDistTarget = np.linalg.norm(v1)
-            iError, dbDistTarget, iDetected = GetDistanceMeasurement()
+            iError, dbDistTarget, iDetected = GetDistanceMeasurement("sensor_robourrin")
             if iError == False:
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
