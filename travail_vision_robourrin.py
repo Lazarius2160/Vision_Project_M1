@@ -1,5 +1,5 @@
 
-#!!!! met iref ou -1? // ligne 631 change axe ? //758 ajoute une ligne??
+#!!!! met iref ou -1? // ligne 631 change axe ? //758 ajoute une ligne?? // doit add le handle du cylindre rouge??
 
 # "switches"
 bSTARTUP_TEST = False                            # indique si la sequence de test (vision et
@@ -28,6 +28,7 @@ CAPTEUR = "distance_sensor"                       # capteur de distance
 TARGET_DUMMY = "target"                           # target dummy
 SENSOR = "tool_detector"
 TOOL = "tool"
+TOY = "toy"                                       # objet à attraper
 NB_ACQUI  = 20
 VREP_PORT   = 19997                               # port serveur de la remonte API COPPELIA
 CAM_STARTUP_TIME = 0.5                            # duree d initialisation du systeme de vision
@@ -49,6 +50,7 @@ giTarget = -1                                     # ID du target dummy
 giBase = -1                                       # ID de la base mobile
 giObject = -1                                    # handle sur l'objet capture
 giTool = -1                                      # handle sur l'outil du robot
+giToy = -1                                       # ID de l'objet à attraper
 gModelIsDynamic = 0
 iCount = 0
 bOnGoing = True                                   # indique que la thread est en cours d'execution 
@@ -702,7 +704,7 @@ def MoveToolTo( iRef, tPos,tOri):
 #  aPos       : position reellement atteinte
 #  aOri       : orientaion rellement atteinte
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def PTP( tPos, dbVel, dbTimeStep, iRef):      # !!!!voir si pas direct remplcé irep par -1????
+def PTP( tPos, dbVel, dbTimeStep, iRef):      
     # obtention de la position et l'orientation courante
     # de l'outil
     while True:
@@ -849,7 +851,7 @@ if( siErrorCode != sim.simx_error_noerror ):
 print("lien a la camera OK (ID = " + str(iCam) + ")")
 giCam = iCam
 #...............................................
-# recuperation du handle sur l'objet "collision"  >>>> cylindre vert
+# recuperation du handle sur l'objet "collision"  >>>> on a un  handle par cylindre ici : cylindre vert
 #...............................................
 siErrorCode, giCylindre = sim.simxGetObjectHandle(siID, CYLINDRE, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
@@ -859,7 +861,7 @@ if( siErrorCode != sim.simx_error_noerror ):
     exit()
 print("lien a la collision OK (ID = " + str(giCylindre) + ")")
 #...............................................
-# recuperation du handle sur l'objet "collision"  >>>> cylindre rouge
+# recuperation du handle sur l'objet "collision"  >>>> ici : cylindre rouge
 #...............................................
 siErrorCode, giCylindre0 = sim.simxGetObjectHandle(siID, CYLINDRE0, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
@@ -909,6 +911,17 @@ if( siErrorCode != sim.simx_error_noerror ):
   sim.simxFinish(siID)
   exit()
 print("lien au capteur d effort OK (ID = " + str(giSensor) + ")")
+#...............................................
+# recuperation du handle sur l'objet à attraper "toy"
+#...............................................
+siErrorCode, giToy = sim.simxGetObjectHandle(siID, TOY, sim.simx_opmode_blocking)
+if( siErrorCode != sim.simx_error_noerror ):
+    print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
+    print('         code de retour V-REP = ' + str(siErrorCode))
+    sim.simxFinish(siID)
+    exit()
+print("lien au toy OK (ID = " + str(giToy) + ")")
+
 #..............................
 # mise en rotation de la camera
 # (par exemple pour prendre une vue
@@ -956,48 +969,46 @@ if bSTARTUP_TEST:
     SetBaseMotorsVelocities(siID, iLeftMotor, (30/180)*math.pi, iRightMotor, (-10/180)*math.pi )
     time.sleep(5)
 #_______________________________________________________________________________________________
-# on arrete le robot 
+# PROJET ET EXPLICATIONS
+#on arrete le robot 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
-# recherche et rencontre du cylindre vert : 
+# recherche et rencontre du cylindre vert :    #>>> VOIR SI LE BON HANDLE POUR LE CYLINDRE VERT
 BourineCylindre2(15.0, 1.0, 0.1, True)     # on s'approche a 1m
 SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
 # rotation 1/2 de tour a gauche pour mettre le kuka face au robot: 
-#Turn2( math.pi, 0.5, 0.01, 0.2, 0.1)   # on est moins strict sur epsilon (passe de 0.008 dans l'exemple à 0.01) et on augmente le gain (0.1 à 0.2)
+Turn2( math.pi, 0.5, 0.01, 0.2, 0.1)   # on est moins strict sur epsilon (passe de 0.008 dans l'exemple à 0.01) et on augmente le gain (0.1 à 0.2)
 # on se place à 30cm du cylindre en marche arrière (pour ne pas taper dedans avec BourrineCylindre)
-#Go5(0.7,0.5,0.01,0.2,0.1,0.1)
+Go5(0.7,0.5,0.01,0.2,0.1,0.1)
+# on récupère la position de l'objet
+position_cube, orientation_cube=GetObjectRelativePositionAndOrientation(giToy,-1)
+# on se met légérement au dessus du cube 
+position_cube[2]=position_cube[2]+0.1
+PTP(position_cube, 0.2, 0.1, -1) 
+# on récupère le cube, on descend et on l'attrape
+position_cube[2]=position_cube[2]-0.1
+PTP(position_cube, 0.2, 0.1, -1) 
+Capture()
+# on se remet légérement au dessus du cube 
+position_cube[2]=position_cube[2]+0.1
+PTP(position_cube, 0.2, 0.1, -1) 
+print("Cube récupéré")
+
+#on recherche le cylindre rouge
+BourineCylindre2(15.0, 1.0, 0.1, False)     # on s'approche a 1m
+SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
+# rotation 1/2 de tour a gauche pour mettre le kuka face au robot: 
+Turn2( math.pi, 0.5, 0.01, 0.2, 0.1)   # on est moins strict sur epsilon (passe de 0.008 dans l'exemple à 0.01) et on augmente le gain (0.1 à 0.2)
+# on se place à 30cm du cylindre en marche arrière (pour ne pas taper dedans avec BourrineCylindre)
+Go5(0.7,0.5,0.01,0.2,0.1,0.1)
+# pour obtenir la position du cylindre
+# valeur, distance = GetDistanceMeasurement("sensor_robourrin")
+# poser_cube = [dbDist, 
 
 
-# puis recherche et rencontre du cylindre rouge :
-#BourineCylindre2(15.0, 1.0, 1.0, False)
-#SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-
-#AzimutCameraCylindre(30.0)
-# on avance de 2 metres avec Go : 
-#Go2( 2, 0.5, 0.01, 0.1, 0.1)
-#Go2( -2, 0.5, 0.01, 0.1, 0.1)
-# # dessin d'un carre d'1,5 m de cote : 
-# # test : avancees de 5 m
-# Go3( 5, 0.5, 0.02, 0.15, 0.1) 
-# # # rotation 1/4 de tour a gauche : 
-# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
-# # # test : avancees de 1.5 m
-# Go3( 5, 0.5, 0.02, 0.15, 0.1)
-# # # rotation 1/4 de tour a gauche : 
-# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
-# # # test : avancees de 1.5 m
-# Go3( 5, 0.5, 0.02, 0.15, 0.1)
-# # # rotation 1/4 de tour a gauche : 
-# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
-# # # test : avancees de 1.5 m
-# Go3( 5, 0.5, 0.02, 0.15, 0.1)
-# # # rotation 1/4 de tour a gauche : 
-# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
 #..............................
 # deconnexion du serveur V-REP 
 #..............................
 sim.simxFinish(gsiID)
 print("deconnexion du serveur.")
-
-
 
