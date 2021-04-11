@@ -1,5 +1,11 @@
 
-#!!!! met iref ou -1? // ligne 631 change axe ? //758 ajoute une ligne?? // doit add le handle du cylindre rouge??
+#===============================================
+# exemple de script permettant de controler
+# le robot ROBOURRIN
+#-----------------------------------------------
+# Jacques BOONAERT - mars 2021
+# UV Robotique & Vision
+#===============================================
 
 # "switches"
 bSTARTUP_TEST = False                            # indique si la sequence de test (vision et
@@ -130,7 +136,7 @@ def GrabImageFromCam( siID, iCam ):
 # declenchement d'une mesure de distance avec le capteur
 # a ultrasons
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def GetDistanceMeasurement(detecte):
+def GetDistanceMeasurement(detecte):        #en fonction de si on mesure avec le kuka ou le robot
     if detecte == "sensor_kuka": # on détecte avec Kuka
         iError,bDetected,Point,iObject,surface=sim.simxReadProximitySensor(gsiID,giSensor,sim.simx_opmode_blocking)
         if bDetected:
@@ -366,7 +372,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)   #doit laisser?????????????????
+      Pos, Ori = GetMobileBasePosition(-1)   # Marine : toujours par rapport au référentiel de base 
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
@@ -390,7 +396,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        PosCur, OriCur = GetMobileBasePosition(-1)
+        PosCur, OriCur = GetMobileBasePosition(-1) # Marine : toujours par rapport au référentiel de base 
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -443,7 +449,7 @@ def Turn2( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
   dbAparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition(-1)  #Marine : toujours par rapport au référentiel de base 
       if len(Ori) > 0:
           break
   # on cree le dummy :
@@ -630,13 +636,13 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
         if iResult > 0:
             Turn2((dbAz/180.0)*math.pi, 0.2, 0.05, 0.1, 0.1)
             # on recale la camera dans l'axe d'avance
-            SetCamOrientation(gsiID, giCamMotor, 0.0)  #!!!!!!!!!!!!!! change l'axe 
+            SetCamOrientation(gsiID, giCamMotor, 0.0)  
             # estimation de la distance a la cible : 
             GetDistanceMeasurement("sensor_robourrin")
             # calcul de la distance au cylindre 
             rPos, rOri = GetMobileBaseRelativePosition( giCylindre)
             # petit "piege" a eviter : ne pas prendre en compte z...
-            rPos[2] = 0.0     #!!!!!!!!!!!!!! elle a commenté
+            rPos[2] = 0.0     
             v1 = np.array(rPos)
             dbDistTarget = np.linalg.norm(v1)
             iError, dbDistTarget = GetDistanceMeasurement("sensor_robourrin")
@@ -757,7 +763,7 @@ def Capture():
 def Release():
     global giObject
     global gModelIsDynamic
-    # on ne capture que si un objet n'est pas deja capture :    #!!!!!ajoute une ligne ??
+    # on ne capture que si un objet n'est pas deja capture :    
     if giObject != -1:
         p,o = GetObjectRelativePositionAndOrientation(giObject, -1)
         # il faut liberer l'objet :
@@ -851,7 +857,7 @@ if( siErrorCode != sim.simx_error_noerror ):
 print("lien a la camera OK (ID = " + str(iCam) + ")")
 giCam = iCam
 #...............................................
-# recuperation du handle sur l'objet "collision"  >>>> on a un  handle par cylindre ici : cylindre vert
+# recuperation du handle sur l'objet "collision"  >>>> Marine: on a un  handle par cylindre ici : cylindre vert
 #...............................................
 siErrorCode, giCylindre = sim.simxGetObjectHandle(siID, CYLINDRE, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
@@ -861,7 +867,7 @@ if( siErrorCode != sim.simx_error_noerror ):
     exit()
 print("lien a la collision OK (ID = " + str(giCylindre) + ")")
 #...............................................
-# recuperation du handle sur l'objet "collision"  >>>> ici : cylindre rouge
+# recuperation du handle sur l'objet "collision"  >>>> Marine : ici : cylindre rouge
 #...............................................
 siErrorCode, giCylindre0 = sim.simxGetObjectHandle(siID, CYLINDRE0, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
@@ -970,10 +976,14 @@ if bSTARTUP_TEST:
     time.sleep(5)
 #_______________________________________________________________________________________________
 # PROJET ET EXPLICATIONS
+# Mon robot fonce dans le cylindre alors que j'ai bien le handle (cylindre vert = cylindre) qui est OK, que mon cylindre est bien visible par les caméras,
+# collidable etc. Je n'ai pas compris d'où venait le problème avec les codes d'erreurs, ceux ci me parlait du fichier sim donc je suppose que mon handle n'est 
+# pas correct. J'ai tout de même ajouté les parties utiles au code (voir les commentaires) et ai fait l'algorithme suivant :
+
 #on arrete le robot 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
-# recherche et rencontre du cylindre vert :    #>>> VOIR SI LE BON HANDLE POUR LE CYLINDRE VERT
+# recherche et rencontre du cylindre vert :    
 BourineCylindre2(15.0, 1.0, 0.1, True)     # on s'approche a 1m
 SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
 # rotation 1/2 de tour a gauche pour mettre le kuka face au robot: 
@@ -983,14 +993,14 @@ Go5(0.7,0.5,0.01,0.2,0.1,0.1)
 # on récupère la position de l'objet
 position_cube, orientation_cube=GetObjectRelativePositionAndOrientation(giToy,-1)
 # on se met légérement au dessus du cube 
-position_cube[2]=position_cube[2]+0.1
+position_cube[2]+=0.1
 PTP(position_cube, 0.2, 0.1, -1) 
 # on récupère le cube, on descend et on l'attrape
-position_cube[2]=position_cube[2]-0.1
+position_cube[2]-=0.1
 PTP(position_cube, 0.2, 0.1, -1) 
 Capture()
 # on se remet légérement au dessus du cube 
-position_cube[2]=position_cube[2]+0.1
+position_cube[2]+=0.1
 PTP(position_cube, 0.2, 0.1, -1) 
 print("Cube récupéré")
 
@@ -998,17 +1008,23 @@ print("Cube récupéré")
 BourineCylindre2(15.0, 1.0, 0.1, False)     # on s'approche a 1m
 SetBaseMotorsVelocities(gsiID, iLeftMotor, 0, iRightMotor, 0 )
 # rotation 1/2 de tour a gauche pour mettre le kuka face au robot: 
-Turn2( math.pi, 0.5, 0.01, 0.2, 0.1)   # on est moins strict sur epsilon (passe de 0.008 dans l'exemple à 0.01) et on augmente le gain (0.1 à 0.2)
+Turn2( math.pi, 0.5, 0.01, 0.2, 0.1)   
 # on se place à 30cm du cylindre en marche arrière (pour ne pas taper dedans avec BourrineCylindre)
 Go5(0.7,0.5,0.01,0.2,0.1,0.1)
 # pour obtenir la position du cylindre
-# valeur, distance = GetDistanceMeasurement("sensor_robourrin")
-# poser_cube = [dbDist, 
-
+iError, position_cylindre0 = sim.simxGetObjectPosition(gsiID,giCylindre0,-1,sim.simx_opmode_blocking)
+# poser le cube 
+PTP(position_cylindre0, 0.2, 0.1, -1)  
+Release()
+position_cylindre0[2]+=0.1 # on se place au dessus pour terminer
+PTP(position_cylindre0, 0.2, 0.1, -1)  
+print("cube posé")
 
 #..............................
 # deconnexion du serveur V-REP 
 #..............................
 sim.simxFinish(gsiID)
 print("deconnexion du serveur.")
+
+
 
