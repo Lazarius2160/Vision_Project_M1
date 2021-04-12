@@ -48,17 +48,6 @@ giTarget = -1                                     # ID du target dummy
 giBase = -1                                       # ID de la base mobile
 iCount = 0
 bOnGoing = True                                   # indique que la thread est en cours d'execution 
-# KUKA 
-# "constantes"
-VREP_PORT   = 19997                              # port serveur de la remonte API COPPELIA
-# noms des objets de l'environnement COPPELIA
-TARGET_DUMMY = "target"
-SENSOR = "tool_detector"
-TOOL = "tool"
-# globales
-giObject = -1                                    # handle sur l'objet capture
-giTool = -1                                      # handle sur l'outil du robot
-gModelIsDynamic = 0
 # tentative d'importation de la librairie V-REP : 
 try:
     import sim
@@ -77,13 +66,6 @@ import sys                                      # interface avec le shell
 import cv2                                      # open CV
 import numpy as np                              # calcul matriciel et cie.
 import matplotlib.pyplot as plt                 # trace de courbes facon MATLAB
-# parametres
-xTest = 0.375
-yTest = -0.35
-zTest = 0.11
-aTest = -180.0 * (math.pi / 180.0)
-bTest = 0.0
-cTest = 0.0
 #&&&&&&&&&&&&&&&&&&&&&
 # aide de ce programme
 #&&&&&&&&&&&&&&&&&&&&&
@@ -148,8 +130,8 @@ def GetDistanceMeasurement():
         dPoint = np.array(Point)
         dbDist = np.linalg.norm(dPoint)
         print('distance = ' + str(dbDist))
-        return True, dbDist, iObject
-    return False, -1.0, -1
+        return True, dbDist
+    return False, -1.0
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # obtention de la position (generalisee) de la base 
 # mobile du robot   
@@ -160,51 +142,19 @@ def GetDistanceMeasurement():
 #             mobile (X est dans la direction d'avance
 #             du robot).                                
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# def GetMobileBasePosition(iRef):  
-#   #............................
-#   # recuperation de la position
-#   #............................
-#   siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
-#   if (siError != sim.simx_return_ok ):
-#     print('GetMobileBasePosition(iRef) : ERREUR ---> appel a simxGetObjectPosition().\n')
-#     print('code d erreur V-REP = ', str(siError) )
-#     return [],[]
-#   #.............................
-#   # recuperation de l'orientation
-#   #..............................
-#   siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
-#   if (siError != sim.simx_return_ok ):
-#     print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
-#     print('code d erreur V-REP = ', str(siError) )
-#     return Pos,[]
-#   # OK
-#   return Pos, Ori
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# obtention de la position (generalisee) de la base 
-# mobile du robot 
-# IN : 
-#   iRef    : handle sur l'objet associe au referentiel
-#             utilise pour reperer l'objet  
-# OUT :
-#   [x,y,z] : position (globale) du repere de la base
-#             mobile
-#   [a,b,c] : orientation (globale) du repere de base
-#             mobile (X est dans la direction d'avance
-#             du robot).                                
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def GetMobileBasePosition(iRef):  
+def GetMobileBasePosition():  
   #............................
   # recuperation de la position
   #............................
-  siError, Pos =  sim.simxGetObjectPosition(siID, giTarget, iRef ,sim.simx_opmode_blocking)
+  siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
   if (siError != sim.simx_return_ok ):
-    print('GetMobileBasePosition(iRef) : ERREUR ---> appel a simxGetObjectPosition().\n')
+    print('GetMobileBasePosition() : ERREUR ---> appel a simxGetObjectPosition().\n')
     print('code d erreur V-REP = ', str(siError) )
     return [],[]
   #.............................
   # recuperation de l'orientation
   #..............................
-  siError, Ori =  sim.simxGetObjectOrientation(siID, giTarget, iRef ,sim.simx_opmode_blocking)
+  siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, -1 ,sim.simx_opmode_blocking)
   if (siError != sim.simx_return_ok ):
     print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
     print('code d erreur V-REP = ', str(siError) )
@@ -227,45 +177,13 @@ def GetMobileBaseRelativePosition(iRef):
   #............................
   siError, Pos =  sim.simxGetObjectPosition(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
   if (siError != sim.simx_return_ok ):
-        print('GetMobileBasePosition(iRef) : ERREUR ---> appel a simxGetObjectPosition().\n')
-        print('code d erreur V-REP = ', str(siError) )
-        return [],[]
-  #.............................
-  # recuperation de l'orientation
-  #..............................
-  siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
-  if (siError != sim.simx_return_ok ):
-        print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
-        print('code d erreur V-REP = ', str(siError) )
-        return Pos,[]
-  # OK
-  return Pos, Ori
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# obtention de la position (generalisee) de la base 
-# mobile du robot 
-# IN : 
-#   iRef    : handle sur l'objet associe au referentiel
-#             utilise pour reperer l'objet  
-# OUT :
-#   [x,y,z] : position (globale) du repere de la base
-#             mobile
-#   [a,b,c] : orientation (globale) du repere de base
-#             mobile (X est dans la direction d'avance
-#             du robot).                                
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def GetObjectRelativePositionAndOrientation(iObject, iRef):  
-  #............................
-  # recuperation de la position
-  #............................
-  siError, Pos =  sim.simxGetObjectPosition(siID, iObject, iRef ,sim.simx_opmode_blocking)
-  if (siError != sim.simx_return_ok ):
-    print('GetMobileBasePosition(iRef) : ERREUR ---> appel a simxGetObjectPosition().\n')
+    print('GetMobileBasePosition() : ERREUR ---> appel a simxGetObjectPosition().\n')
     print('code d erreur V-REP = ', str(siError) )
     return [],[]
   #.............................
   # recuperation de l'orientation
   #..............................
-  siError, Ori =  sim.simxGetObjectOrientation(siID, iObject, iRef ,sim.simx_opmode_blocking)
+  siError, Ori =  sim.simxGetObjectOrientation(siID, iBaseHandle, iRef ,sim.simx_opmode_blocking)
   if (siError != sim.simx_return_ok ):
     print('GetMobilePosition() : ERREUR ---> appel a simxGetObjectOrientation().\n')
     print('code d erreur V-REP = ', str(siError) )
@@ -276,9 +194,9 @@ def GetObjectRelativePositionAndOrientation(iObject, iRef):
 # activation de la rotation de la tourelle
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def RotateCameraContinuous( siID, hCamMotor, dbVelocity):
-  #....................................*/
-  # Application des vitesses au moteur */
-  #....................................*/
+    #....................................*/
+    # Application des vitesses au moteur */
+    #....................................*/
     siError = sim.simxSetJointTargetVelocity(siID, hCamMotor, dbVelocity, sim.simx_opmode_blocking)
     if ((siError != sim.simx_return_ok) and (siError != sim.simx_return_novalue_flag)):
         print('Go() : ERREUR ---> appel a simxSetJointTargetVelocity() depuis RotateCameraContinuous()')
@@ -298,7 +216,7 @@ def SetCamOrientation( siID, hCamMotor, dbOrientation):
         print('code d erreur V-REP = ' + str(siError))
         return(-1)
     # TEST
-    OrienteKuka( 1+ ( dbOrientation / 180.0)*math.pi)
+    OrienteKuka(( 1.0 + dbOrientation / 180.0)*math.pi)
     return 0
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # application des vitesses angulaires aux moteurs
@@ -312,7 +230,7 @@ def SetBaseMotorsVelocities( siID, iLeft, dbVelLeft, iRight, dbVelRight):
         return(-1)
     siError = sim.simxSetJointTargetVelocity(siID, iRight, dbVelRight, sim.simx_opmode_blocking)
     if ((siError != sim.simx_return_ok) and (siError != sim.simx_return_novalue_flag)):
-        print('Go() : ERREUR ---> appel a simxSetJointTargetVelocity() depuis SetBaseMotorsVelocities() 2')
+        print('Go() : ERREUR ---> appel a simxSetJointTargetVelocity() depuis SetBaseMotorsVelocities() 2') 
         print('code d erreur V-REP = ' + str(siError))
         return(-1)
     return 0
@@ -340,7 +258,275 @@ def CyclicGrabbing():
     threading.Timer(UPDATE_TIME, CyclicGrabbing).start()
   else:
     bOnGoing = False
-
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO (1):
+# ecrire une fonction permettant de faire avancer le robot 
+# vers l'avant ou l'arriere d'une distance donnee
+# (le robot s'arrete une fois la distance parcourue)
+# Go( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep)
+# IN :
+# dbDist = la "distance" a parcourir (en m)
+#          si > 0 : vers l'avant
+#          si < 0 : vers l'arrier
+# dbVmax = la vitesse maximale autorisee
+# dbEpsilon = l'erreur en distance toleree. Le robot
+#             peut s'arreter de la difference avec la
+#             distance theorique a parcourir vaut dbEpsilon
+# dbGain = valeur du gain (si on utilise une loi de commande de
+#          type proportionnelle)
+# dbTimeStep = le pas temporel utilise pour la mise a jour de
+#              la commande
+#----------------------------------------------------------
+# REMARQUE IMPORTANTE : si le gain est trop important, il 
+# y a un risque de depasser la distance a parcourir, dans 
+# ce cas, le robot poursuivra sa route en accelerant (en 
+# utilisant dbEpsilon).
+# alternative : s'arreter des que la distance parcourue
+# devient superieure a la distance a parcourir. 
+# le mieux : gerer les deux conditions (si on ne declenche
+# que sur le depassement, il y a alors un risque que si on
+# ne depasse pas, le fonction ne "retourne" jamais... ! 
+#----------------------------------------------------------
+# Ce qu'on doit constater : 
+# - les distances parcourues sont plus longues que les 
+#   distances reelles...
+# - origine du probleme : on suppose respectees les periodes
+#   d'echantillonnage gerees par time.sleep(). Elles sont
+#   de fait largement depassees ! Solution --> affiner la
+#   prise en compte du temps en evaluant le temps qui s'est
+#   "reellement" ecoule (du point de vue du simulateur)
+#   entre deux mises a jour ---> fonction Go2
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def Go( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep):
+  dbDparcourue = 0.0
+  while abs( dbDparcourue - abs(dbDist)) > dbEpsilon:
+      dbV = dbGain * abs( dbDparcourue - abs(dbDist))
+      # limitation de la vitesse d'avance
+      if dbV > dbVmax:
+          dbV = dbVmax
+      # pour info : 
+      dbError = abs( dbDparcourue - abs(dbDist))
+      print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
+      dbDparcourue += dbTimeStep * dbV
+      if dbDist < 0:
+        dbV = -dbV
+      # application des vitesses :
+      Wroue = dbV /  RAYON_ROUE  
+      SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
+      time.sleep( dbTimeStep)
+    # en quittant, on fixe les vitesses a 0 : 
+  SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# une amelioration de "Go" en tentant de prendre en compte
+# le duree reellement ecoulee entre 2 appels
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def Go2( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep):
+  iNbIter = 0
+  dbDparcourue = 0.0
+  t0  = 0
+  while abs( dbDparcourue - abs(dbDist)) > dbEpsilon:
+      dbV = dbGain * abs( dbDparcourue - abs(dbDist))
+      # limitation de la vitesse d'avance
+      if dbV > dbVmax:
+          dbV = dbVmax
+      # pour info : 
+      dbError = abs( dbDparcourue - abs(dbDist))
+      print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
+      # determination de la duree ecoulee depuis l'application de la
+      # derniere commande
+      if iNbIter > 0:
+          t1 = sim.simxGetLastCmdTime( gsiID)
+          dt = 0.001 * (t1 - t0)
+          t0 = t1
+      else:
+          t0 = sim.simxGetLastCmdTime( gsiID)
+          dt = dbTimeStep   # pour la premier iteration, on utilise le pas par defaut...
+      dbDparcourue += dt * dbV
+      if dbDist < 0:
+        dbV = -dbV
+      # application des vitesses :
+      Wroue = dbV /  RAYON_ROUE  
+      SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
+      time.sleep( dbTimeStep)
+      # mise a jour de l'indice de l'iteration
+      iNbIter += 1
+    # en quittant, on fixe les vitesses a 0 : 
+  SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO (2): 
+# ecrire une fonction permettant de faire tourner le robot
+# dans le sens trigo ou inverse d'un angle donnee
+# (le robot s'arrete une fois la rotation achevee)
+# Turn( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep)
+# IN :
+# dbAngle = l'angle a parcourir (en radians)
+#          si > 0 : sens trigonometrique
+#          si < 0 : sens horaire
+# dbWmax = la vitesse angulaire maximale autorisee
+# dbEpsilon = l'erreur en angle toleree. Le robot
+#             peut s'arreter de la difference avec l'
+#             angle theorique a decrire vaut dbEpsilon
+# dbGain = valeur du gain (si on utilise une loi de commande de
+#          type proportionnelle)
+# dbTimeStep = le pas temporel utilise pour la mise a jour de
+#              la commande
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# commande de rotation sur place (meme principe que Go2)
+# -----------------------------------------------------------
+# AJOUTER SOUS VREP LE TRACE DE LA TRAJECTOIRE AU SOL ET
+# DEMANDER AU ROBOT DE DECRIRE UN CARRE...
+# (penser a modifier la taille du buffer associe au graphe 
+# pour obtenir une trace assez longue : 1 000 000 de points)
+# ---> faire constater aux eleves que le carre n'est pas parfait
+# ---> demander a quoi peut etre du cette erreur
+# d'ou le TODO 2.1
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def Turn( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
+  iNbIter = 0
+  dbAparcourue = 0.0
+  dbWL = 0.0
+  dbWR = 0.0
+  t0  = 0
+  while abs( dbAparcourue - abs(dbAngle)) > dbEpsilon:
+      dbW = dbGain * abs( dbAparcourue - abs(dbAngle))
+      # limitation de la vitesse d'avance
+      if dbW > dbWmax:
+          dbW = dbWmax
+      # d ou la vitesse lineaire des roues 
+      dbVLin = dbW * 0.5 *dbENTRAXE
+      # d ou la vitesse angulaire des roues
+      dbWroue = dbVLin / RAYON_ROUE
+      # pour info : 
+      dbError = abs( dbAparcourue - abs(dbAngle))
+      print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbW) + ' rad/s angle = ' + str(dbAparcourue) + ' rad')
+      # determination de la duree ecoulee depuis l'application de la
+      # derniere commande
+      if iNbIter > 0:
+          t1 = sim.simxGetLastCmdTime( gsiID)
+          dt = 0.001 * (t1 - t0)
+          t0 = t1
+      else:
+          t0 = sim.simxGetLastCmdTime( gsiID)
+          dt = dbTimeStep   # pour la premier iteration, on utilise le pas par defaut...
+      dbAparcourue += dt * dbW
+      if dbAngle < 0:
+        dbWR = dbWroue
+        dbWL = -dbWroue
+      else:
+        dbWR = -dbWroue
+        dbWL = dbWroue
+      # application des vitesses :
+      SetBaseMotorsVelocities( gsiID, giLeft, dbWL, giRight, dbWR)
+      time.sleep( dbTimeStep)
+      # mise a jour de l'indice de l'iteration
+      iNbIter += 1
+    # en quittant, on fixe les vitesses a 0 : 
+  SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO 2.1 : 
+# re-ecrire la fonction Go en utilisant la connaissance de 
+# la position absolue du robot
+# RQ : ETRE MOINS STRICT SUR EPSILON ET AUGMENTER (UN PEU !) LE GAIN
+# OUT :
+# 0, d : distance parcourue dans rencontrer d'obstable (distance = d)
+# 1, d : obstacle rencontre (distance parcourue ~ d)
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def Go3( dbDist, dbVmax, dbEpsilon, dbGain, dbTimeStep):
+  dbDparcourue = 0.0
+  # recuperation de la position initiale  
+  while True:
+      Pos, Ori = GetMobileBasePosition()
+      if len(Pos) > 0:
+          break
+  # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
+  while abs( dbDparcourue - abs(dbDist)) > dbEpsilon:
+      dbV = dbGain * abs( dbDparcourue - abs(dbDist))
+      # limitation de la vitesse d'avance
+      if dbV > dbVmax:
+          dbV = dbVmax
+      # pour info : 
+      dbError = abs( dbDparcourue - abs(dbDist))
+      print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
+      # mise a jour de la distance parcourue 
+      while True:
+        PosCur, OriCur = GetMobileBasePosition()
+        if len(PosCur) > 0:
+            break
+      M0 = np.array( Pos )        # position initiale
+      M1 = np.array( PosCur )     # position actuelle
+      dbDparcourue = np.linalg.norm( M0 - M1)
+      if dbDist < 0:
+        dbV = -dbV
+      # application des vitesses :
+      Wroue = dbV /  RAYON_ROUE  
+      SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
+      time.sleep( dbTimeStep)
+      # mise a jour de l'indice de l'iteration
+    # en quittant, on fixe les vitesses a 0 : 
+  SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+  return 0, dbDparcourue # pas de collision
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO 2.1 : 
+# re-ecrire la fonction Go en utilisant la connaissance de 
+# la position absolue du robot
+# RQ : ETRE MOINS STRICT SUR EPSILON ET AUGMENTER (UN PEU !) LE GAIN
+# IN
+# dbDist : distance a parcourir
+# dbVmax : vitesse maximale autorisee
+# dbEpsilon : tolerance sur la distance a parcourir
+# dbGain : gain pour la commande proportionnelle
+# dbMinDist : distance a l'obstacle minimale declenchant l'arret
+# dbTimeStep : ~ periode de mise a jour de la commande
+# OUT :
+# 0, d : distance parcourue dans rencontrer d'obstable (distance = d)
+# 1, d : obstacle rencontre (distance parcourue ~ d)
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+def Go4( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
+  dbDparcourue = 0.0
+  # recuperation de la position initiale  
+  while True:
+      Pos, Ori = GetMobileBasePosition()
+      if len(Pos) > 0:
+          break
+  # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
+  while abs( dbDparcourue - abs(dbDist)) > dbEpsilon:
+      # calcul de la distance au cylindre 
+      rPos, rOri = GetMobileBaseRelativePosition( giCylindre)
+      # petit "piege" a eviter : ne pas prendre en compte z...
+      rPos[2] = 0.0
+      v1 = np.array(rPos)
+      dbDistTarget = np.linalg.norm(v1)
+      print('distance a la cible = ' + str(dbDistTarget))
+      if dbDistTarget < dbMinDist:
+          # on arrete le deplacement si on est assez pres de la cible : 
+          SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+          return 1, dbDparcourue, dbDistTarget
+      dbV = dbGain * abs( dbDparcourue - abs(dbDist))
+      # limitation de la vitesse d'avance
+      if dbV > dbVmax:
+          dbV = dbVmax
+      # pour info : 
+      dbError = abs( dbDparcourue - abs(dbDist))
+      print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
+      # mise a jour de la distance parcourue 
+      while True:
+        PosCur, OriCur = GetMobileBasePosition()
+        if len(PosCur) > 0:
+            break
+      M0 = np.array( Pos )        # position initiale
+      M1 = np.array( PosCur )     # position actuelle
+      dbDparcourue = np.linalg.norm( M0 - M1)
+      if dbDist < 0:
+        dbV = -dbV
+      # application des vitesses :
+      Wroue = dbV /  RAYON_ROUE  
+      SetBaseMotorsVelocities( gsiID, giLeft, Wroue, giRight, Wroue)
+      time.sleep( dbTimeStep)
+      # mise a jour de l'indice de l'iteration
+    # en quittant, on fixe les vitesses a 0 : 
+  SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
+  return 0, dbDparcourue, dbDistTarget # pas de collision
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # TODO 2.1 : 
 # re-ecrire la fonction Go en utilisant la connaissance de 
@@ -361,16 +547,13 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      #Pos, Ori = GetMobileBasePosition(iRef)
-      # JBO : il faut remplacer le iRef par -1 si on veut les orientations et positions par rapport au referentiel global
-      Pos, Ori = GetMobileBasePosition(-1)
+      Pos, Ori = GetMobileBasePosition()
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
   while abs( dbDparcourue - abs(dbDist)) > dbEpsilon:
       # MESURE de la distance au cylindre 
-      # JBO : manquait la troisieme variable iDetected car GetDistanceMeasurement() retourne 3 objets
-      bResult, dbDistTarget, iDetected = GetDistanceMeasurement()
+      bResult, dbDistTarget = GetDistanceMeasurement()
       if bResult == False:
           dbDistTarget = dbDEFAULT_DISTANCE
           print('cible non detectee, distance par defaut = ' + str(dbDEFAULT_DISTANCE))
@@ -388,8 +571,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        # JBO : il faut remplacer le iRef par -1 si on veut les orientations et positions par rapport au referentiel global
-        PosCur, Ori = GetMobileBasePosition(-1)
+        PosCur, OriCur = GetMobileBasePosition()
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -421,8 +603,7 @@ def Turn2( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
   dbAparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      #Pos, Ori = GetMobileBasePosition(iRef)
-      Pos, Ori = GetMobileBasePosition(-1)      # JBO ---> remplacement de iRef par -1 pour avoir la position et l'oriention globales
+      Pos, Ori = GetMobileBasePosition()
       if len(Ori) > 0:
           break
   # on cree le dummy :
@@ -464,7 +645,6 @@ def Turn2( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
   # en quittant, on detruit le dummy on fixe les vitesses a 0 :
   iError = sim.simxRemoveObject(gsiID,iDummy,sim.simx_opmode_blocking) 
   SetBaseMotorsVelocities( gsiID, giLeft, 0.0, giRight, 0.0)
-
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # determination de la distance focale de la camera 
 # (en pixels horizontaux)
@@ -485,14 +665,14 @@ def Azimut( dbX, dbY, dbF, dbW):
 # determination de l'azimut du cylindre vu de la camera, 
 # s'il y a lieu (s'il est visible)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def AzimutCameraCylindre( dbAngle, bGoR):
+def AzimutCameraCylindre( dbAngle, bGoR=True):
     # declenchement d'un acquisition
     img1 = GrabImageFromCam(gsiID, giCam)
     cv2.imshow("ORIGINAL", img1)
     cv2.waitKey(10)
     # determination du centre de gravite du plan vert
     #iNbPixels, Center = CoG(img1, 180, 1)
-    iNbPixels, Center = CoGGreenOrRed(img1, 160, 60, bGoR)  #If bGoR = True on a du vert
+    iNbPixels, Center = CoGGreenOrRed(img1, 160, 60, bGoR)
     xc = Center[0]
     yc = Center[1]
     # si a trouve qqchose, on affiche le centre :
@@ -555,10 +735,11 @@ def CoG( imgIn, dbSeuil, iPlan):
 # imgIn : image d'entree (format OpenCV) 
 # dbSeuil : seuil pour la "binarisation"
 # iPlan : 'plan' image (0,1, ou 2)
+# bGoR : si True -> cylindre vert, si False cylindre rouge
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoGGreenOrRed( imgIn, dbSeuil, dbSeuilMax, bGoR):
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def CoGGreenOrRed( imgIn, dbSeuil, dbSeuilMax, bGoR=True):
     # recuperation des dimensions de l'image
     iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
@@ -599,7 +780,7 @@ def CoGGreenOrRed( imgIn, dbSeuil, dbSeuilMax, bGoR):
 # recherche du cylindre en faisant tourner la tourelle
 # on retourne l'azimut du cylindre s'il a ete trouve 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def RechercheCylindre( dbAngleStep, bGoR):
+def RechercheCylindre( dbAngleStep, bGoR=True):
     dbAngleCouvert = 0.0            # angle total couvert lors de la recherche
     while dbAngleCouvert < 360.0:
         SetCamOrientation(gsiID, giCamMotor, dbAngleCouvert )
@@ -621,7 +802,35 @@ def RechercheCylindre( dbAngleStep, bGoR):
             SetCamOrientation(gsiID, giCamMotor, dbAngleCouvert )
     # pas trouve...
     return -1, -180.0
-
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+# fonction de recherche et de rencontre du cylindre
+# IN : 
+#   dbAngleStep : pas de recherche de la cible avec
+#                 la camera
+#   dbGoStep : pas de deplacement entre 2 scans
+#   dbMinDist : distance minimale toleree en l'absence
+#               de choc..
+# OUT : 
+#   -1 : cible non detectee
+#    0 : atteinte de la cible
+#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
+def BourineCylindre( dbAngleStep, dbGoStep, dbMinDist, bGoR=True):
+    dbDist = dbTOO_BIG_DISTANCE
+    while dbDist > dbMinDist:
+        # scan de la cible : 
+        iResult, dbAz = RechercheCylindre(dbAngleStep,bGoR)
+        # on s'oriente vers la cible si on l'a trouvee :
+        if iResult > 0:
+            Turn2((dbAz/180.0)*math.pi, 0.5, 0.05, 0.1, 0.1)
+            # on recale la camera dans l'axe d'avance
+            SetCamOrientation(gsiID, giCamMotor, 0.0)
+            # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
+            iError, dbDistParcourue, dbDist = Go4(-dbGoStep, 1.0, 0.02, 0.15, dbMinDist, 0.1)
+            if iError == 1:
+                return 0
+        else:
+            return -1 # la cible n'a pas ete trouvee ou a disparu
+    return 0    # cible atteinte a la precision voulue...
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # fonction de recherche et de rencontre du cylindre
 # Version plus "adaptative" pour les parcours
@@ -654,14 +863,12 @@ def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
             #rPos[2] = 0.0
             #v1 = np.array(rPos)
             #dbDistTarget = np.linalg.norm(v1)
-            # JBO : manquait le iDetectedObject (car GetDistanceMeasurement() retoure 3 objets)
-            iError, dbDistTarget, iDetectedObject = GetDistanceMeasurement()
+            iError, dbDistTarget = GetDistanceMeasurement()
             if iError == False:
                 dbDistTarget = dbDEFAULT_DISTANCE
             # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
             #iError, dbDistParcourue, dbDist = Go4(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
-            # JBO : j'ai du changer le signe associe a la distance a parcourir (c'est desormais un '+')
-            iError, dbDistParcourue, dbDist = Go5(0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
+            iError, dbDistParcourue, dbDist = Go5(-0.5*dbDistTarget, 0.5, 0.02, 0.15, dbMinDist, 0.1)
             if iError == 1:
                 return 0
         else:
@@ -685,116 +892,13 @@ def PlaceToolAt( iRef, tPos):
 # du Kuka pivote d'un angle theta autour de l'axe 1
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def OrienteKuka( dbAngle ):
-    dbAngle = dbAngle % (2.0 * math.pi)
-    dbX = dbXK + dbRAYON_KUKA * math.cos( dbAngle)
-    dbY = dbYK + dbRAYON_KUKA * math.sin( dbAngle)
-    dbZ = dbHAUTEUR_KUKA
-    # on place le "target" relativement a la base de Robourrin
-    PlaceToolAt( giBase, [dbX,dbY,dbZ])
-    return 0
-
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# deplacement de l'outil du robot
-# IN
-# iRef : referentiel par rapport auquel on deplace (-1 : global)
-# tPos : position cible = [xT,yT,zT]
-# tOri : orientation cible = [aT,bT,cT]
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def MoveToolTo( iRef, tPos,tOri):
-    iError = sim.simxSetObjectPosition(gsiID,giTarget,iRef,tPos,sim.simx_opmode_blocking)
-    if iError != sim.simx_return_ok:
-        print('ERREUR : MoveToolTo() ---> appel a simxSetObjectPosition() ')
-        print('         valeur de retour = ' + str(iError))
-        return -1
-    iError = sim.simxSetObjectOrientation(gsiID,giTarget,iRef,tOri,sim.simx_opmode_blocking)
-    if iError != sim.simx_return_ok:
-        print('ERREUR : MoveToolTo() ---> appel a simxSetObjectOrientation() ')
-        print('         valeur de retour = ' + str(iError))
-        return -1
-    return 0
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# deplacement de l'outil a une position absolue donnee
-# IN : 
-#  tPos       : position cible
-#  dbVel      : vitesse lineaire souhaitee
-#  dbTimeStep : pas temporel pour le deplacement
-# OUT : 
-#  aPos       : position reellement atteinte
-#  aOri       : orientaion rellement atteinte
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def PTP( tPos, dbVel, dbTimeStep):
-    #obtention de la position et l'orientation courante
-    #de l'outil
-   while True:
-       cPos, cOri = GetMobileBasePosition(-1)
-       if (len(cPos) > 0) and (len(cOri) > 0):
-           break
-   # calcul des variations 
-   DPos = np.array(tPos) - np.array(cPos)
-   # calcul du nombre de pas a realiser a priori
-   npDist = np.linalg.norm(DPos)
-   dbT = npDist / dbVel
-   # nombre d'iterations
-   iNbIter = int(dbT / dbTimeStep)
-   dPos = DPos / iNbIter
-   # initialisation
-   Pos = cPos
-   # deplacement
-   for i in range(iNbIter):
-       Pos += dPos
-       MoveToolTo( -1, Pos.tolist(), cOri)
-       time.sleep( dbTimeStep * 0.25)
-   return Pos.tolist(), cOri
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# fonction de capture d'un objet "en contact"
-# avec le capteur d'effort
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def Capture():
-    global giObject
-    global gModelIsDynamic
-    # on ne capture que si un objet n'est pas deja capture : 
-    if giObject == -1:
-        # on commence par lire l'etat du capteur d'effort
-        iState, dbDist, giObject = GetDistanceMeasurement()
-        if iState == True:  # on a detecte quelque chose
-            # capture de l'etat dynamique / statique de l'objet : 
-            iError, gModelIsDynamic =sim.simxGetModelProperty(gsiID,giObject,sim.simx_opmode_blocking)
-            # on rend l'objet statique : 
-            iError =sim.simxSetModelProperty(gsiID,giObject, sim.sim_modelproperty_not_dynamic, sim.simx_opmode_blocking)
-            # il faut capturer l'objet : (cette fois-ci, on le rend "enfant" de l'outil du robot)
-            print('CAPTURE')
-            #iError = sim.simxSetObjectParent(gsiID,giObject,giTarget,True,sim.simx_opmode_blocking)
-            iError = sim.simxSetObjectParent(gsiID,giObject,giTool,True,sim.simx_opmode_blocking)
-        else:
-            print('PAS DE DETECTION...')
-    else:
-        print('PREHENSEUR OCCUPE...')
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# fonction de liberation d'un objet 
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def Release():
-    global giObject
-    global gModelIsDynamic
-    # on ne capture que si un objet n'est pas deja capture : 
-    if giObject != -1:
-        p,o = GetObjectRelativePositionAndOrientation(giObject, -1)
-        # il faut liberer l'objet :
-        iError = sim.simxSetObjectParent(gsiID,giObject,-1,False,sim.simx_opmode_blocking)
-        # on restaure l'etat de l'objet : 
-        iError =sim.simxSetModelProperty(gsiID,giObject, gModelIsDynamic , sim.simx_opmode_blocking)
-        #iError =sim.simxSetModelProperty(gsiID,giObject, 0 , sim.simx_opmode_blocking)
-        # on doit lui reassigner sa position dans l'espace de travail
-        iError = sim.simxSetObjectPosition(gsiID,giObject,-1,p,sim.simx_opmode_blocking)
-        if iError != sim.simx_return_ok:
-            print('ERREUR : Release() ---> appel a simxSetObjectPosition() ')
-            print('         valeur de retour = ' + str(iError))
-            return -1
-        iError = sim.simxSetObjectOrientation(gsiID,giObject,-1,o,sim.simx_opmode_blocking)
-        if iError != sim.simx_return_ok:
-            print('ERREUR : Release() ---> appel a simxSetObjectOrientation() ')
-            print('         valeur de retour = ' + str(iError))
-            return -1
-            
+  dbAngle = dbAngle % (2.0 * math.pi)
+  dbX = dbXK + dbRAYON_KUKA * math.cos( dbAngle + 0.5 * math.pi)
+  dbY = dbYK + dbRAYON_KUKA * math.sin( dbAngle + 0.5 * math.pi)
+  dbZ = dbHAUTEUR_KUKA
+  # on place le "target" relativement a la base de Robourrin
+  PlaceToolAt( giBase, [dbX,dbY,dbZ])
+  return 0
 ##########################
 # point d'entree du script 
 ##########################
@@ -868,41 +972,37 @@ if( siErrorCode != sim.simx_error_noerror ):
   exit()
 print("lien a la camera OK (ID = " + str(iCam) + ")")
 giCam = iCam
-argc = len(sys.argv)
-if( argc == 1 ):
-  usage(sys.argv[0])
-  exit()
-giCam = iCam
+#...............................................
+# recuperation du handle sur l'objet "collision"
+#...............................................
+siErrorCode, giCylindre = sim.simxGetObjectHandle(siID, CYLINDRE, sim.simx_opmode_blocking)
+if( siErrorCode != sim.simx_error_noerror ):
+    print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
+    print('         code de retour V-REP = ' + str(siErrorCode))
+    sim.simxFinish(siID)
+    exit()
+print("lien a la collision OK (ID = " + str(giCylindre) + ")")
 #...........................................
-#recuperation des "handles" sur le target dummy
+# recuperation du handle sur le target dummy 
 #...........................................
-siErrorCode, giTarget = sim.simxGetObjectHandle(siID, TARGET_DUMMY, sim.simx_opmode_blocking)
+siErrorCode, giTarget = sim.simxGetObjectHandle(siID, TARGET, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
   print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
   print('         code de retour V-REP = ' + str(siErrorCode))
   sim.simxFinish(siID)
   exit()
 print("lien au target dummy OK (ID = " + str(giTarget) + ")")
-#.............................................
-# recuperation du handle sur l'outil du robot' 
-#.............................................
-siErrorCode, giTool = sim.simxGetObjectHandle(siID, TOOL, sim.simx_opmode_blocking)
-if( siErrorCode != sim.simx_error_noerror ):
-  print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
-  print('         code de retour V-REP = ' + str(siErrorCode))
-  sim.simxFinish(siID)
-  exit()
-print("lien a l outil du robot OK (ID = " + str(giTool) + ")")
-#...............................................
-# recuperation du handle sur le capteur d'effort 
-#...............................................
-siErrorCode, giSensor = sim.simxGetObjectHandle(siID, SENSOR, sim.simx_opmode_blocking)
-if( siErrorCode != sim.simx_error_noerror ):
-  print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
-  print('         code de retour V-REP = ' + str(siErrorCode))
-  sim.simxFinish(siID)
-  exit()
-print("lien au capteur d effort OK (ID = " + str(giSensor) + ")")
+if iVERSION > 2:
+    #......................................
+    # recuperation du handle sur le capteur
+    #......................................
+    siErrorCode, giSensor = sim.simxGetObjectHandle(siID, CAPTEUR, sim.simx_opmode_blocking)
+    if( siErrorCode != sim.simx_error_noerror ):
+        print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
+        print('         code de retour V-REP = ' + str(siErrorCode))
+        sim.simxFinish(siID)
+        exit()
+    print("lien au capteur OK (ID = " + str(giSensor) + ")")
 #..............................
 # mise en rotation de la camera
 # (par exemple pour prendre une vue
@@ -931,7 +1031,7 @@ if bSTARTUP_TEST:
     while True:
         cv2.imshow("RENDER", gimg)
         cv2.waitKey(20)
-        aPos, aOri = GetMobileBasePosition(iRef)
+        aPos, aOri = GetMobileBasePosition()
         if len(aPos) > 0: # il peut arriver que la liste retournee soit vide ! 
             strX =  '{:.3f}'.format(aPos[0])
             strY =  '{:.3f}'.format(aPos[1])
@@ -949,62 +1049,41 @@ if bSTARTUP_TEST:
     # on fait decrire au robot un arc de cercle 
     SetBaseMotorsVelocities(siID, iLeftMotor, (30/180)*math.pi, iRightMotor, (-10/180)*math.pi )
     time.sleep(5)
-#____________________________________________________________________________________________
-#######################
-# PROJET
-# Doit faire aller le robot au cylindre vert, prendre l'objet et le poser au rouge
-# Il nous faut : 
-# - bourineCylindre2() pour trouver et aller au cylindre, si on a True on cherche le vert et si on a False le rouge
-# - On trouve la position du cube avec GetDistanceMeasurement()
-# - on déplace le bras du robot avec PTP jusque à la boule
-# - on attrape la boule avec Capture() mais attention au repère (bras diff de robourrin)
-# - on remet le bras en position initiale ? 
-# - meme que étape 1 mais avec False
-# - on déplace le bras du robot avec PTP jusque poser la boule
-# - on pose avec Realease()
-
-# recherche et rencontre du cylindre vert
-BourineCylindre2(15.0, 1.0, 1.0, True) 
-Pos, Ori = GetMobileBasePosition(-1)
-# met le kuka face au cube
-Turn2(2*(90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
-# prend la distance du kuka au cube
-position_cube = GetDistanceMeasurement() 
-# # déplace la pince du robot au cube
-# MoveToolTo(-1, position_cube[1],Ori)
-# PTP(position_cube[1], 0.1, 0.1)
-# # attrape le cube 
-# Capture()
-# # On se met légérement au dessus du cylindre 
-# position_cube[1]=[position_cube[1][0],position_cube[1][1],position_cube[1][2]+0.1]
-# PTP(position_cube[1], 0.1, 0.1)
-# # recherche et rencontre du cylindre rouge
-# BourineCylindre2(15.0, 1.0, 1.0, False) 
-# Pos, Ori = GetMobileBasePosition(iRef)
-# # On fait la même chose mais en posant le cube
-# Turn2(2*(90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
-# position_cube = GetDistanceMeasurement() 
-# MoveToolTo(-1, position_cube[1],Ori)
-# PTP(position_cube[1], 0.1, 0.1) 
-# Release()
-# #On se met légérement au dessus du cylindre 
-# position_cube[1]=[position_cube[1][0],position_cube[1][1],position_cube[1][2]+0.1]
-# PTP(position_cube[1], 0.1, 0.1)
-
-
-# # on arrete le robot 
-# SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
-# # recherche et rencontre du cylindre
-# if iVERSION < 3 :
-#     # recherche et recontre du cylindre vert : 
-#     BourineCylindre(15.0, 1.0, 1.0, True)
-#     # puis recherche et rencontre du cylindre rouge : 
-#     BourineCylindre(15.0, 1.0, 1.0, False)
-# else:
-#     # recherche et rencontre du cylindre vert : 
-#     BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
-#     # puis recherche et rencontre du cylindre rouge :
-#     BourineCylindre2(15.0, 1.0, 1.0, False)
+#_______________________________________________________________________________________________
+# on arrete le robot 
+SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
+# recherche et rencontre du cylindre
+if iVERSION < 3 :
+    # recherche et recontre du cylindre vert : 
+    BourineCylindre(15.0, 1.0, 1.0, True)
+    # puis recherche et rencontre du cylindre rouge : 
+    BourineCylindre(15.0, 1.0, 1.0, False)
+else:
+    # recherche et rencontre du cylindre vert : 
+    BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
+    # puis recherche et rencontre du cylindre rouge :
+    BourineCylindre2(15.0, 1.0, 1.0, False)
+#AzimutCameraCylindre(30.0)
+# on avance de 2 metres avec Go : 
+#Go2( 2, 0.5, 0.01, 0.1, 0.1)
+#Go2( -2, 0.5, 0.01, 0.1, 0.1)
+# # dessin d'un carre d'1,5 m de cote : 
+# # test : avancees de 5 m
+# Go3( 5, 0.5, 0.02, 0.15, 0.1)
+# # # rotation 1/4 de tour a gauche : 
+# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
+# # # test : avancees de 1.5 m
+# Go3( 5, 0.5, 0.02, 0.15, 0.1)
+# # # rotation 1/4 de tour a gauche : 
+# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
+# # # test : avancees de 1.5 m
+# Go3( 5, 0.5, 0.02, 0.15, 0.1)
+# # # rotation 1/4 de tour a gauche : 
+# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
+# # # test : avancees de 1.5 m
+# Go3( 5, 0.5, 0.02, 0.15, 0.1)
+# # # rotation 1/4 de tour a gauche : 
+# Turn2( (90/180) * math.pi, 0.5, (0.5/180)*math.pi, 0.1, 0.1)
 #..............................
 # deconnexion du serveur V-REP 
 #..............................
