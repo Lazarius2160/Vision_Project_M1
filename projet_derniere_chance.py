@@ -979,7 +979,7 @@ if iVERSION > 2:
 #...........................................
 # recuperation du handle sur le target dummy 
 #...........................................
-siErrorCode, giTarget = sim.simxGetObjectHandle(siID, TARGET_DUMMY, sim.simx_opmode_blocking)
+siErrorCode, giTarget = sim.simxGetObjectHandle(siID, TARGET, sim.simx_opmode_blocking)
 if( siErrorCode != sim.simx_error_noerror ):
   print('ERREUR : main() ---> apppel a simxGetObjectHandle()\n')
   print('         code de retour V-REP = ' + str(siErrorCode))
@@ -1092,4 +1092,5 @@ else:
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
 
