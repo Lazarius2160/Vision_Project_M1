@@ -434,7 +434,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
   dbDparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition()
+      Pos, Ori = GetMobileBasePosition(-1)
       if len(Pos) > 0:
           break
   # on itere jusqu'a ce qu'on ait parcouru approximativement la distance
@@ -458,7 +458,7 @@ def Go5( dbDist, dbVmax, dbEpsilon, dbGain, dbMinDist, dbTimeStep):
       print('erreur = ' + str(dbError) + ' vitesse = ' + str(dbV) + ' m/s distance = ' + str(dbDparcourue))
       # mise a jour de la distance parcourue 
       while True:
-        PosCur, OriCur = GetMobileBasePosition()
+        PosCur, OriCur = GetMobileBasePosition(-1)
         if len(PosCur) > 0:
             break
       M0 = np.array( Pos )        # position initiale
@@ -490,7 +490,7 @@ def Turn2( dbAngle, dbWmax, dbEpsilon, dbGain, dbTimeStep):
   dbAparcourue = 0.0
   # recuperation de la position initiale  
   while True:
-      Pos, Ori = GetMobileBasePosition()
+      Pos, Ori = GetMobileBasePosition(-1)
       if len(Ori) > 0:
           break
   # on cree le dummy :
@@ -1034,7 +1034,7 @@ if bSTARTUP_TEST:
     while True:
         cv2.imshow("RENDER", gimg)
         cv2.waitKey(20)
-        aPos, aOri = GetMobileBasePosition()
+        aPos, aOri = GetMobileBasePosition(-1)
         if len(aPos) > 0: # il peut arriver que la liste retournee soit vide ! 
             strX =  '{:.3f}'.format(aPos[0])
             strY =  '{:.3f}'.format(aPos[1])
