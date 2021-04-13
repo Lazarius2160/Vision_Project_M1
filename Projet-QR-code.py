@@ -1,4 +1,5 @@
 ##DOIT AJOUTER KUKA ET TT SES BAILS
+## QUESTION EN COURS : quel ordre pour chercher le cylindre ? > prend une image, test si y a le qrcode, (si oui cherche azimuth?? je sais plus a quoi sert), cherche la position avec le cylindre, y va avec go > tt ca se déplie depuis Bourrine Cylindre
 
 #===============================================
 # exemple de script permettant de controler
@@ -461,14 +462,13 @@ def Azimut( dbX, dbY, dbF, dbW):
 # determination de l'azimut du cylindre vu de la camera, 
 # s'il y a lieu (s'il est visible)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def AzimutCameraCylindre( dbAngle, bGoR=True):      # MARINE : une fois qu'on a l'angle on va sur un seul cylindre donc peut suppr le bGoR car cylindre tous meme couleurs
+def AzimutCameraCylindre( dbAngle):      # MARINE : une fois qu'on a l'angle on va sur un seul cylindre donc peut suppr le bGoR car cylindre tous meme couleurs
     # declenchement d'un acquisition
     img1 = GrabImageFromCam(gsiID, giCam)
     cv2.imshow("ORIGINAL", img1)
     cv2.waitKey(10)
     # determination du centre de gravite du plan vert
-    #iNbPixels, Center = CoG(img1, 180, 1)
-    iNbPixels, Center = CoGGreenOrRed(img1, 160, 60, bGoR)
+    iNbPixels, Center = CoG(img1, 160, 60)
     xc = Center[0]
     yc = Center[1]
     # si a trouve qqchose, on affiche le centre :
@@ -497,7 +497,7 @@ def AzimutCameraCylindre( dbAngle, bGoR=True):      # MARINE : une fois qu'on a 
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoG( imgIn, dbSeuil, iPlan):
+def CoG( imgIn, dbSeuil, iPlan):            # MARINE : pas besoin de changer on a juste suppr CoGreen or Red car plus utile
     # recuperation des dimensions de l'image
     iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
@@ -525,64 +525,18 @@ def CoG( imgIn, dbSeuil, iPlan):
     # fini
     print('xc = ' + str( dbXcog))
     return iNbPixels, [dbXcog, dbYcog]
-"""
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# calcul du centre de gravite associe a un plan image
-# IN : 
-# imgIn : image d'entree (format OpenCV) 
-# dbSeuil : seuil pour la "binarisation"
-# iPlan : 'plan' image (0,1, ou 2)
-# bGoR : si True -> cylindre vert, si False cylindre rouge
-# OUT :
-# [xCoG, yCoG] : coordonnees image du centre de gravite
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoGGreenOrRed( imgIn, dbSeuil, dbSeuilMax, bGoR=True):
-    # recuperation des dimensions de l'image
-    iImgSize = imgIn.shape
-    iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
-    iNc = iImgSize[1]       # nombre de colonnes (largeur de l'image)
-    iNp = iImgSize[2]       # nombre de plan couleur
-    # intialisation
-    dbXcog = 0.0
-    dbYcog = 0.0
-    iNbPixels = 0
-    # calcul
-    for i in range(iNl):
-        for j in range(iNc):
-            iB = imgIn[i,j,0]
-            iG = imgIn[i,j,1]
-            iR = imgIn[i,j,2]
 
-            if bGoR == True:
-                if iG > dbSeuil and iB < dbSeuilMax and iR < dbSeuilMax:
-                    dbXcog += j
-                    dbYcog += i
-                    iNbPixels += 1
-            else:
-                if iR > dbSeuil and iB < dbSeuilMax and iG < dbSeuilMax:
-                    dbXcog += j
-                    dbYcog += i
-                    iNbPixels += 1
-    # coordonnees finales
-    if iNbPixels > 0:
-        dbXcog = dbXcog / iNbPixels
-        dbYcog = dbYcog / iNbPixels
-    else:
-        dbXcog = -1
-        dbYcog = -1
-    # fini
-    print('xc = ' + str( dbXcog))
-    return iNbPixels, [dbXcog, dbYcog]
-    """
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # recherche du cylindre en faisant tourner la tourelle
 # on retourne l'azimut du cylindre s'il a ete trouve 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def RechercheCylindre( dbAngleStep, bGoR=True):
+def RechercheCylindre( dbAngleStep, idQRCode):         # MARINE : pas besoin param bGoR car on cherche un QR Code donc on doit appeler quelQRCode et quand trouve lance la suite code
     dbAngleCouvert = 0.0            # angle total couvert lors de la recherche
     while dbAngleCouvert < 360.0:
         SetCamOrientation(gsiID, giCamMotor, dbAngleCouvert )
-        iFound, dbAz = AzimutCameraCylindre(30.0, bGoR) # (1) recherche du cylindre dans l'image  (iFound > 0 si trouve)
+        """if idQRCode == quelQRCode(                   # cherche le cylindre avec le bon qrCode, !!!!!! ARRETER ICI"""
+        iFound, dbAz = AzimutCameraCylindre(30.0)       # MARINE : sans bGoR du coup mais on en a besoin pour l'azimuth
+                                                        # (1) recherche du cylindre dans l'image  (iFound > 0 si trouve)
                                                         # (2) calcul de l'azimut "local" (vu de la camera) si cylindre trouve
         if iFound > 0:
             print("\a\a\a\a")                           # bip victorieux....
@@ -600,35 +554,6 @@ def RechercheCylindre( dbAngleStep, bGoR=True):
             SetCamOrientation(gsiID, giCamMotor, dbAngleCouvert )
     # pas trouve...
     return -1, -180.0
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-# fonction de recherche et de rencontre du cylindre
-# IN : 
-#   dbAngleStep : pas de recherche de la cible avec
-#                 la camera
-#   dbGoStep : pas de deplacement entre 2 scans
-#   dbMinDist : distance minimale toleree en l'absence
-#               de choc..
-# OUT : 
-#   -1 : cible non detectee
-#    0 : atteinte de la cible
-#&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def BourineCylindre( dbAngleStep, dbGoStep, dbMinDist, bGoR=True):
-    dbDist = dbTOO_BIG_DISTANCE
-    while dbDist > dbMinDist:
-        # scan de la cible : 
-        iResult, dbAz = RechercheCylindre(dbAngleStep,bGoR)
-        # on s'oriente vers la cible si on l'a trouvee :
-        if iResult > 0:
-            Turn2((dbAz/180.0)*math.pi, 0.5, 0.05, 0.1, 0.1)
-            # on recale la camera dans l'axe d'avance
-            SetCamOrientation(gsiID, giCamMotor, 0.0)
-            # on avance d'un metre vers la cible (les moteurs sont orientes a l'envers...)
-            iError, dbDistParcourue, dbDist = Go4(-dbGoStep, 1.0, 0.02, 0.15, dbMinDist, 0.1)
-            if iError == 1:
-                return 0
-        else:
-            return -1 # la cible n'a pas ete trouvee ou a disparu
-    return 0    # cible atteinte a la precision voulue...
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # fonction de recherche et de rencontre du cylindre
 # Version plus "adaptative" pour les parcours
@@ -884,3 +809,4 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
