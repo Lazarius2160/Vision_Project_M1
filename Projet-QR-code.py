@@ -144,6 +144,8 @@ def quelQRCode (cvImg): #input : image au format OpenCV
   corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)  
   # ici ids donne l'id associé au QR code donc on return la valeur associé au QR code >> attention au format avec plusieurs QR renvoit une colonne [[1][2][3]]
   # donc avec un QR renvoie [[2]] par exemple donc on récupère le premier (hypothèse que le premier vu et le plus proche)
+  if ids == None:
+      return 0
   return ids[0][0]
   
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -462,30 +464,35 @@ def Azimut( dbX, dbY, dbF, dbW):
 # determination de l'azimut du cylindre vu de la camera, 
 # s'il y a lieu (s'il est visible)
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def AzimutCameraCylindre( dbAngle):      # MARINE : une fois qu'on a l'angle on va sur un seul cylindre donc peut suppr le bGoR car cylindre tous meme couleurs
+def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle on va sur un seul cylindre donc peut suppr le bGoR car cylindre tous meme couleurs
     # declenchement d'un acquisition
     img1 = GrabImageFromCam(gsiID, giCam)
     cv2.imshow("ORIGINAL", img1)
     cv2.waitKey(10)
-    # determination du centre de gravite du plan vert
-    iNbPixels, Center = CoG(img1, 160, 60)
-    xc = Center[0]
-    yc = Center[1]
-    # si a trouve qqchose, on affiche le centre :
-    if xc > 0:
-        print("nombre de pixels sur la cible = " + str(iNbPixels))
-
-        img2 = cv2.copyTo(img1,np.ones(img1.shape, np.uint8))
-        # on trace une croix centree sur le CoG
-        pt1 = (int(xc) , 0)
-        pt2 = (int(xc), img2.shape[1] - 1)
-        cv2.line(img2, pt1, pt2,(0,255,255))
-        cv2.imshow("TARGET", img2)
-        cv2.waitKey(10)
-        # calcul de l'angle d'azimut local
-        dbF = GetCamFocal( 30.0, img1.shape[0])
-        dbAz = Azimut( xc, yc, dbF, img1.shape[0])
-    else:
+    # MARINE : on regarde si il y a un QR Code sur l'image ou non
+    chercheCode = quelQRCode(img1)
+    if rechercheCode != 0 :                 # MARINE : si on trouve un QR code alors on calcule l'azimut
+        # determination du centre de gravite de l'image selon tout les plan
+        iNbPixels, Center = CoG(img1, 160, 60)
+        xc = Center[0]
+        yc = Center[1]
+        # si a trouve qqchose, on affiche le centre :
+        if xc > 0:
+            print("nombre de pixels sur la cible = " + str(iNbPixels))
+    
+            img2 = cv2.copyTo(img1,np.ones(img1.shape, np.uint8))
+            # on trace une croix centree sur le CoG
+            pt1 = (int(xc) , 0)
+            pt2 = (int(xc), img2.shape[1] - 1)
+            cv2.line(img2, pt1, pt2,(0,255,255))
+            cv2.imshow("TARGET", img2)
+            cv2.waitKey(10)
+            # calcul de l'angle d'azimut local
+            dbF = GetCamFocal( 30.0, img1.shape[0])
+            dbAz = Azimut( xc, yc, dbF, img1.shape[0])
+        else:
+            dbAz = -180.0   # pas coherent, pour test de validite
+    else: 
         dbAz = -180.0   # pas coherent, pour test de validite
     return xc, dbAz
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -497,7 +504,7 @@ def AzimutCameraCylindre( dbAngle):      # MARINE : une fois qu'on a l'angle on 
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoG( imgIn, dbSeuil, iPlan):            # MARINE : pas besoin de changer on a juste suppr CoGreen or Red car plus utile
+def CoG( imgIn, dbSeuil, iPlan):            # MARINE : on teste tout les plans !
     # recuperation des dimensions de l'image
     iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
@@ -510,11 +517,13 @@ def CoG( imgIn, dbSeuil, iPlan):            # MARINE : pas besoin de changer on 
     # calcul
     for i in range(iNl):
         for j in range(iNc):
-            dbIntensite = imgIn[i,j,iPlan]
-            if dbIntensite > dbSeuil:
-                dbXcog += j
-                dbYcog += i
-                iNbPixels += 1
+            iB = imgIn[i,j,0]
+            iG = imgIn[i,j,1]
+            iR = imgIn[i,j,2]
+            if iG > dbSeuil or iB > dbSeuil or iR > dbSeuil:
+                    dbXcog += j
+                    dbYcog += i
+                    iNbPixels += 1
     # coordonnees finales
     if iNbPixels > 0:
         dbXcog = dbXcog / iNbPixels
@@ -809,4 +818,5 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
 
