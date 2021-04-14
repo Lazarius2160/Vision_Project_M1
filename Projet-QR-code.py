@@ -799,7 +799,7 @@ for i in range(0, n):
 print("Votre séquence est :" +str(seq))   #on prend la valeur tapée au clavier
       
 # Recherche des cylindres
-for i in range lenght(seq):
+for i in range lengh(seq):
 # on doit donc savoir en avance qui est 1 2 etc (met ça où? dans un case break > fait tourner la cam avec "recherche cylindre" et prend en entrée qui ont veut aller voir (cad au lieu de prendre bCoG green reconnait l'image sans le CoG ?)
     # Puis on va au cylindre
     BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche direct à 30cm
