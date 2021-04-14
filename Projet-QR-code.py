@@ -1,4 +1,3 @@
-##DOIT AJOUTER KUKA ET TT SES BAILS
 ## QUESTION EN COURS : quel ordre pour chercher le cylindre ? > prend une image, test si y a le qrcode, (si oui cherche azimuth?? je sais plus a quoi sert), cherche la position avec le cylindre, y va avec go > tt ca se déplie depuis Bourrine Cylindre
 
 #===============================================
@@ -471,7 +470,7 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
     cv2.waitKey(10)
     # MARINE : on regarde si il y a un QR Code sur l'image ou non
     chercheCode = quelQRCode(img1)
-    if rechercheCode != 0 :                 # MARINE : si on trouve un QR code alors on calcule l'azimut
+    if chercheCode == id :                 # MARINE : si on trouve un QR code alors on calcule le CoG de l'image (suppose que y a forcement un cylindre du coup
         # determination du centre de gravite de l'image selon tout les plan
         iNbPixels, Center = CoG(img1, 160, 60)
         xc = Center[0]
@@ -506,7 +505,8 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def CoG( imgIn, dbSeuil, iPlan):            # MARINE : on teste tout les plans !
     # recuperation des dimensions de l'image
-    iImgSize = imgIn.shape
+    imgG = cv2.cvtColor(imgIn, cv2.COLOR_BGR2GRAY) # Marine : !!! passe l'image en noir et blanc
+    iImgSize = imgG.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
     iNc = iImgSize[1]       # nombre de colonnes (largeur de l'image)
     iNp = iImgSize[2]       # nombre de plan couleur
@@ -539,12 +539,11 @@ def CoG( imgIn, dbSeuil, iPlan):            # MARINE : on teste tout les plans !
 # recherche du cylindre en faisant tourner la tourelle
 # on retourne l'azimut du cylindre s'il a ete trouve 
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def RechercheCylindre( dbAngleStep, idQRCode):         # MARINE : pas besoin param bGoR car on cherche un QR Code donc on doit appeler quelQRCode et quand trouve lance la suite code
+def RechercheCylindre( dbAngleStep, id):         # MARINE : pas besoin param bGoR mais de l'id du qrcode
     dbAngleCouvert = 0.0            # angle total couvert lors de la recherche
     while dbAngleCouvert < 360.0:
         SetCamOrientation(gsiID, giCamMotor, dbAngleCouvert )
-        """if idQRCode == quelQRCode(                   # cherche le cylindre avec le bon qrCode, !!!!!! ARRETER ICI"""
-        iFound, dbAz = AzimutCameraCylindre(30.0)       # MARINE : sans bGoR du coup mais on en a besoin pour l'azimuth
+        iFound, dbAz = AzimutCameraCylindre(30.0, id)       # MARINE : sans bGoR mais avec l'id
                                                         # (1) recherche du cylindre dans l'image  (iFound > 0 si trouve)
                                                         # (2) calcul de l'azimut "local" (vu de la camera) si cylindre trouve
         if iFound > 0:
@@ -577,12 +576,12 @@ def RechercheCylindre( dbAngleStep, idQRCode):         # MARINE : pas besoin par
 #   -1 : cible non detectee
 #    0 : atteinte de la cible
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,bGoR):
+def BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,id):
     dbDist = dbTOO_BIG_DISTANCE
     while dbDist > dbMinDist:
         # scan de la cible : 
-        iResult, dbAz = RechercheCylindre(dbAngleStep, bGoR)
-        # on s'oriente vers la cible si on l'a trouvee :
+        iResult, dbAz = RechercheCylindre(dbAngleStep, id)
+        # on s'oriente vers la cile si on l'a trouvee :
         if iResult > 0:
             Turn2((dbAz/180.0)*math.pi, 0.5, 0.05, 0.1, 0.1)
             # on recale la camera dans l'axe d'avance
@@ -802,14 +801,9 @@ print("Votre séquence est :" +str(seq))   #on prend la valeur tapée au clavier
 # Recherche des cylindres
 for i in range lenght(seq):
 # on doit donc savoir en avance qui est 1 2 etc (met ça où? dans un case break > fait tourner la cam avec "recherche cylindre" et prend en entrée qui ont veut aller voir (cad au lieu de prendre bCoG green reconnait l'image sans le CoG ?)
-""" 
-etape 1 : dans CoG > azimuth cam > recherche cylindre > bourrine
-etape 2 : mettre dans ttes les fonctions avec bCoG en param > la valeur de la séquence
-etape 3 : ajouter des trucs de kuka ?
-"""
     # Puis on va au cylindre
-    # BourineCylindre2( dbAngleStep, dbGoStep, dbMinDist,seq[i]) avec seq[i] le numéro du cube à trouver
-    # valeur de base du prof : BourineCylindre2(15.0, 1.0, 1.0, True)     # on s'approche a 1 m
+    BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche direct à 30cm
+    wait.key(5)
 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
@@ -818,5 +812,6 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
 
 
