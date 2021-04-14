@@ -1,5 +1,3 @@
-## QUESTION EN COURS : quel ordre pour chercher le cylindre ? > prend une image, test si y a le qrcode, (si oui cherche azimuth?? je sais plus a quoi sert), cherche la position avec le cylindre, y va avec go > tt ca se déplie depuis Bourrine Cylindre
-
 #===============================================
 # exemple de script permettant de controler
 # le robot ROBOURRIN
@@ -132,7 +130,7 @@ def GrabImageFromCam( siID, iCam ):
 def quelQRCode (cvImg): #input : image au format OpenCV
   #load l'image, ici pas besoin je pense car on la prend en entrée (possible??)
   image = cv2.imread(cvImg)
-  image = cv2.resize(512, 512)   #doit mettre la résolution de la cam à 512x512 sur copelia?
+  image = cv2.resize(image,512, 512)   
   gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
   
   # Init du dictionnaire aruco et lancement de la détection
@@ -468,6 +466,7 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
     img1 = GrabImageFromCam(gsiID, giCam)
     cv2.imshow("ORIGINAL", img1)
     cv2.waitKey(10)
+    xc = -1
     # MARINE : on regarde si il y a un QR Code sur l'image ou non
     chercheCode = quelQRCode(img1)
     if chercheCode == id :                 # MARINE : si on trouve un QR code alors on calcule le CoG de l'image (suppose que y a forcement un cylindre du coup
@@ -505,8 +504,7 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def CoG( imgIn, dbSeuil, iPlan):            # MARINE : on teste tout les plans !
     # recuperation des dimensions de l'image
-    imgG = cv2.cvtColor(imgIn, cv2.COLOR_BGR2GRAY) # Marine : !!! passe l'image en noir et blanc
-    iImgSize = imgG.shape
+    iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
     iNc = iImgSize[1]       # nombre de colonnes (largeur de l'image)
     iNp = iImgSize[2]       # nombre de plan couleur
@@ -812,6 +810,7 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
 
 
 
