@@ -141,6 +141,7 @@ def quelQRCode (cvImg): #input : image au format OpenCV
   corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)  
   # ici ids donne l'id associé au QR code donc on return la valeur associé au QR code >> attention au format avec plusieurs QR renvoit une colonne [[1][2][3]]
   # donc avec un QR renvoie [[2]] par exemple donc on récupère le premier (hypothèse que le premier vu et le plus proche)
+  print(ids)                # MARINE : on affiche le QR code
   if ids is None:
       return 0, [-1,-1,-1,-1]           # MARINE on renvoie des chiffres abhérent
   return ids[0][0], corners         # MARINE : on garde les corners pour le CoG
@@ -469,16 +470,18 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
     xc = -1
     # MARINE : on regarde si il y a un QR Code sur l'image ou non
     chercheCode, corners = quelQRCode(img1)
+
     if chercheCode == id :                 # MARINE : si on trouve un QR code alors on calcule le CoG de l'image (suppose que y a forcement un cylindre du coup
+        print("est ce que rentre dans cette boucle")
         # determination du centre de gravite de l'image selon tout les plan
-        #iNbPixels, Center = CoG(img1, 160, 60, corners)
-        # MARINE: je vais calculer le centre de gravité associé au QR Code à la main
-        xc = corners[0][0][3][1]-corners[0][0][0][1]
-        yc = corners[0][0][1][0]-corners[0][0][0][0]
+        iNbPixels, Center = CoG(img1, 160, 60, corners)
+        xc = Center[0]
+        yc = Center[1]
+        print("xc ="+str(xc))
+        print("yc ="+str(yc))
         # si a trouve qqchose, on affiche le centre :
         if xc > 0:
             #print("nombre de pixels sur la cible = " + str(iNbPixels)) # MARINE : pas besoin des pixels du coup
-            print("cible trouvée")          # MARINE : pour quand meme vérifié on affiche ça
             img2 = cv2.copyTo(img1,np.ones(img1.shape, np.uint8))
             # on trace une croix centree sur le CoG
             pt1 = (int(xc) , 0)
@@ -503,7 +506,7 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoG( imgIn, dbSeuil, iPlan, corners):            # MARINE : on teste tout les plans et on prend les coins du QR Code
+def CoG( imgIn, dbSeuil, iPlan, corners):            # MARINE : on teste tout les plans et on prend les coins du QR Code(dois remettre si marche)
     # recuperation des dimensions de l'image
     iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
@@ -519,10 +522,11 @@ def CoG( imgIn, dbSeuil, iPlan, corners):            # MARINE : on teste tout le
             iB = imgIn[i,j,0]
             iG = imgIn[i,j,1]
             iR = imgIn[i,j,2]
-            if iG > dbSeuil or iB > dbSeuil or iR > dbSeuil:
-                    dbXcog += j
-                    dbYcog += i
-                    iNbPixels += 1
+            if (corners[0][0][1][1]<i<corners[0][0][3][1]) and (corners[0][0][0][0]<j<corners[0][0][2][0]): #MARINE : si on est dans le QRcode alors on peut calculer le COG
+                if iG > dbSeuil  or iB > dbSeuil or iR > dbSeuil:
+                        dbXcog += j
+                        dbYcog += i
+                        iNbPixels += 1
     # coordonnees finales
     if iNbPixels > 0:
         dbXcog = dbXcog / iNbPixels
@@ -801,8 +805,10 @@ print("Votre séquence est :" +str(seq))   #on prend la valeur tapée au clavier
 for i in range (len(seq)):
 # on doit donc savoir en avance qui est 1 2 etc (met ça où? dans un case break > fait tourner la cam avec "recherche cylindre" et prend en entrée qui ont veut aller voir (cad au lieu de prendre bCoG green reconnait l'image sans le CoG ?)
     # Puis on va au cylindre
-    BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche direct à 30cm
-    
+    BourineCylindre2( 15.0, 1.0, 1.0,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche à 1m pour les test
+    #BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) 
+    #Go5(# MARINE : on recule en ligne droite sinon il risque de taper dans un autre cylindre en se déplaçant
+    print("Cible numero "+str(i)+" trouvée")
 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
@@ -811,6 +817,21 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
