@@ -129,8 +129,8 @@ def GrabImageFromCam( siID, iCam ):
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 def quelQRCode (cvImg): #input : image au format OpenCV
   #load l'image, ici pas besoin je pense car on la prend en entrée (possible??)
-  image = cv2.imread(cvImg)
-  image = cv2.resize(image,512, 512)   
+  # image = cv2.imread(cvImg)
+  image = cv2.resize(cvImg,(512, 512))   
   gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
   
   # Init du dictionnaire aruco et lancement de la détection
@@ -797,11 +797,11 @@ for i in range(0, n):
 print("Votre séquence est :" +str(seq))   #on prend la valeur tapée au clavier
       
 # Recherche des cylindres
-for i in range (length(seq)):
+for i in range (len(seq)):
 # on doit donc savoir en avance qui est 1 2 etc (met ça où? dans un case break > fait tourner la cam avec "recherche cylindre" et prend en entrée qui ont veut aller voir (cad au lieu de prendre bCoG green reconnait l'image sans le CoG ?)
     # Puis on va au cylindre
     BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche direct à 30cm
-    wait.key(5)
+    
 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
@@ -810,6 +810,11 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
+
+
+
+
 
 
 
