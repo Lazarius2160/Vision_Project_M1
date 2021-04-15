@@ -473,8 +473,8 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
         # determination du centre de gravite de l'image selon tout les plan
         #iNbPixels, Center = CoG(img1, 160, 60, corners)
         # MARINE: je vais calculer le centre de gravité associé au QR Code à la main
-        xc = corners[3][1]-corners[0][1]
-        yc = corner[1][0]-corners[0][0]
+        xc = corners[0][0][3][1]-corners[0][0][0][1]
+        yc = corners[0][0][1][0]-corners[0][0][0][0]
         # si a trouve qqchose, on affiche le centre :
         if xc > 0:
             #print("nombre de pixels sur la cible = " + str(iNbPixels)) # MARINE : pas besoin des pixels du coup
@@ -811,6 +811,16 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
+
+
+
+
+
+
+
+
+
 
 
 
