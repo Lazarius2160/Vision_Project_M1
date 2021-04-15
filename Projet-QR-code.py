@@ -141,9 +141,9 @@ def quelQRCode (cvImg): #input : image au format OpenCV
   corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)  
   # ici ids donne l'id associé au QR code donc on return la valeur associé au QR code >> attention au format avec plusieurs QR renvoit une colonne [[1][2][3]]
   # donc avec un QR renvoie [[2]] par exemple donc on récupère le premier (hypothèse que le premier vu et le plus proche)
-  if ids == None:
-      return 0
-  return ids[0][0]
+  if ids is None:
+      return 0, [-1,-1,-1,-1]           # MARINE on renvoie des chiffres abhérent
+  return ids[0][0], corners         # MARINE : on garde les corners pour le CoG
   
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 # declenchement d'une mesure de distance avec le capteur
@@ -468,16 +468,17 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
     cv2.waitKey(10)
     xc = -1
     # MARINE : on regarde si il y a un QR Code sur l'image ou non
-    chercheCode = quelQRCode(img1)
+    chercheCode, corners = quelQRCode(img1)
     if chercheCode == id :                 # MARINE : si on trouve un QR code alors on calcule le CoG de l'image (suppose que y a forcement un cylindre du coup
         # determination du centre de gravite de l'image selon tout les plan
-        iNbPixels, Center = CoG(img1, 160, 60)
-        xc = Center[0]
-        yc = Center[1]
+        #iNbPixels, Center = CoG(img1, 160, 60, corners)
+        # MARINE: je vais calculer le centre de gravité associé au QR Code à la main
+        xc = corners[3][1]-corners[0][1]
+        yc = corner[1][0]-corners[0][0]
         # si a trouve qqchose, on affiche le centre :
         if xc > 0:
-            print("nombre de pixels sur la cible = " + str(iNbPixels))
-    
+            #print("nombre de pixels sur la cible = " + str(iNbPixels)) # MARINE : pas besoin des pixels du coup
+            print("cible trouvée")          # MARINE : pour quand meme vérifié on affiche ça
             img2 = cv2.copyTo(img1,np.ones(img1.shape, np.uint8))
             # on trace une croix centree sur le CoG
             pt1 = (int(xc) , 0)
@@ -502,7 +503,7 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
 # OUT :
 # [xCoG, yCoG] : coordonnees image du centre de gravite
 #&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-def CoG( imgIn, dbSeuil, iPlan):            # MARINE : on teste tout les plans !
+def CoG( imgIn, dbSeuil, iPlan, corners):            # MARINE : on teste tout les plans et on prend les coins du QR Code
     # recuperation des dimensions de l'image
     iImgSize = imgIn.shape
     iNl = iImgSize[0]       # nombre de lignes ( hauteur de l'image)
@@ -810,6 +811,16 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
+
+
+
+
+
+
+
+
+
 
 
 
