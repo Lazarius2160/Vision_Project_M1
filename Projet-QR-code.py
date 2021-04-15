@@ -470,15 +470,13 @@ def AzimutCameraCylindre( dbAngle, id):      # MARINE : une fois qu'on a l'angle
     xc = -1
     # MARINE : on regarde si il y a un QR Code sur l'image ou non
     chercheCode, corners = quelQRCode(img1)
-
+    print("code trouve = "+str(chercheCode)+" id voulu = "+str(id))
     if chercheCode == id :                 # MARINE : si on trouve un QR code alors on calcule le CoG de l'image (suppose que y a forcement un cylindre du coup
         print("est ce que rentre dans cette boucle")
         # determination du centre de gravite de l'image selon tout les plan
         iNbPixels, Center = CoG(img1, 160, 60, corners)
         xc = Center[0]
         yc = Center[1]
-        print("xc ="+str(xc))
-        print("yc ="+str(yc))
         # si a trouve qqchose, on affiche le centre :
         if xc > 0:
             #print("nombre de pixels sur la cible = " + str(iNbPixels)) # MARINE : pas besoin des pixels du coup
@@ -805,10 +803,12 @@ print("Votre séquence est :" +str(seq))   #on prend la valeur tapée au clavier
 for i in range (len(seq)):
 # on doit donc savoir en avance qui est 1 2 etc (met ça où? dans un case break > fait tourner la cam avec "recherche cylindre" et prend en entrée qui ont veut aller voir (cad au lieu de prendre bCoG green reconnait l'image sans le CoG ?)
     # Puis on va au cylindre
-    BourineCylindre2( 15.0, 1.0, 1.0,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche à 1m pour les test
+    BourineCylindre2( 15.0, 1.0, 1.0,seq[i]) # MARINE : avec seq[i] le numéro du cube à trouver et on s'approche à 0.7 pour les test
     #BourineCylindre2( 15.0, 1.0, 0.3,seq[i]) 
-    #Go5(# MARINE : on recule en ligne droite sinon il risque de taper dans un autre cylindre en se déplaçant
+    #Go5(-0.7, 0.5,0.01, 0.1,0.1)       # MARINE : on recule en ligne droite sinon il risque de taper dans un autre cylindre en se déplaçant
     print("Cible numero "+str(i)+" trouvée")
+    SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
+
 
 SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 
@@ -817,6 +817,36 @@ SetBaseMotorsVelocities(siID, iLeftMotor, 0, iRightMotor, 0 )
 #..............................
 sim.simxFinish(siID)
 print("deconnexion du serveur.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
